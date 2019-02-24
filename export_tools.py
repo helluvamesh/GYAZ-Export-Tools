@@ -354,7 +354,7 @@ class PG_GYAZ_ExportProps (PropertyGroup):
             ),
         default='SKELETAL_MESHES')
 
-    static_mesh_pack_objects = BoolProperty (name='Pack Objects', default=False, description='Whether to pack all objects into one file or export them as separate files. Sockets will not be exported')
+    static_mesh_pack_objects = BoolProperty (name='Pack Objects', default=False, description='Whether to pack all objects into one file or export them as separate files. If true, sockets will not be exported')
     skeletal_mesh_pack_objects = BoolProperty (name='Pack Objects', default=False, description='Whether to pack all objects into one file or export them as separate files')
     rigid_anim_pack_objects = BoolProperty (name='Pack Objects', default=False, description="Whether to pack all objects into one file or export them as separate files. If checked, 'Use Scene Start End' is forced, 'Export Cubes' is not an option")
         
@@ -392,7 +392,7 @@ class PG_GYAZ_ExportProps (PropertyGroup):
     
     export_sockets = BoolProperty (default=True, name='Sockets', description='Sockets need to be parented to the object and only work if a file only contains one object. Prefix: SOCKET_, Example: Object --> SOCKET_anything. Socket (armature) objects are gathered automatically and should not be selected. Scale is ignored')
     
-    export_lods = BoolProperty (default=True, name='LODs', description='Prefix: Obj --> Obj_LOD1, Obj_LOD2 (LOD0 should not have a suffix). LODs are gathered automatically and should not be selected')
+    export_lods = BoolProperty (default=True, name='LODs', description='Suffix: Obj --> Obj_LOD1, Obj_LOD2 (LOD0 should not have a suffix). LODs are gathered automatically and should not be selected')
     
     ignore_missing_second_uv_map = BoolProperty (default=False, name='Ignore 2nd UV Check')
     
