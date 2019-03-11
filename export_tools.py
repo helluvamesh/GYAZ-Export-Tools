@@ -1622,12 +1622,12 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 
                 for child in mesh_children:
                     if len (child.vertex_groups) > 0:
+                        make_active_only (child)
+                        bpy.ops.object.mode_set (mode='WEIGHT_PAINT')
                         if limit_prop != 'unlimited':
                             limit = int (limit_prop)
-                            make_active_only (child)
-                            bpy.ops.object.mode_set (mode='WEIGHT_PAINT')
                             bpy.ops.object.vertex_group_limit_total (group_select_mode='ALL', limit=limit)
-                        
+                    
                         # clean vertex weights with 0 influence    
                         bpy.ops.object.vertex_group_clean (group_select_mode='ALL', limit=0, keep_single=False)
                         
