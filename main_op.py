@@ -307,7 +307,10 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 
             # make all collectios visible
             for collection in bpy.context.scene.collection.children:
-                collection.hide_viewport = False
+                collection.hide_viewport, collection.hide_select = False, False
+                for obj in collection.objects:
+                    obj.hide_viewport, obj.hide_select = False, False
+                    obj.hide_set (False)
                 
             
             length = len (scene.gyaz_export.extra_bones)    
