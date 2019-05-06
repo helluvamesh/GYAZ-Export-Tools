@@ -51,7 +51,7 @@ def report (self, item, error_or_info):
 def make_active_only (obj):
     bpy.ops.object.mode_set (mode='OBJECT')
     bpy.ops.object.select_all (action='DESELECT')
-    obj.select_set(True)
+    obj.select_set (True)
     bpy.context.view_layer.objects.active = obj
     
 def make_active (obj):
@@ -717,28 +717,35 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                                     
             #######################################################
             # LIMIT BONE INFLUENCES BY VERTEX
-            #######################################################
+            #######################################################  
             
             if asset_type == 'SKELETAL_MESHES':
+                
+                bpy.ops.object.mode_set (mode='OBJECT')
                 
                 limit_prop = scene.gyaz_export.skeletal_mesh_limit_bone_influences
                 
                 for child in mesh_children:
                     if len (child.vertex_groups) > 0:
+                        make_active_only (child)
                         
-                        # override context
                         ctx = bpy.context.copy ()
-                        ctx['active_object'] = child
                         ctx['object'] = child
-                        ctx['mode'] = 'PAINT_WEIGHT'
-                        
+
+                        bpy.ops.object.mode_set (mode='WEIGHT_PAINT')
+                        child.data.use_paint_mask_vertex = True
+                        bpy.ops.paint.vert_select_all (action='SELECT')
+                            
                         if limit_prop != 'unlimited':
                             limit = int (limit_prop)
                             bpy.ops.object.vertex_group_limit_total (ctx, group_select_mode='ALL', limit=limit)
                     
-                        # clean vertex weights with 0 influence    
+                        # clean vertex weights with 0 influence
                         bpy.ops.object.vertex_group_clean (ctx, group_select_mode='ALL', limit=0, keep_single=False)
-                        
+            
+            
+            bpy.ops.object.mode_set (mode='OBJECT')
+            bpy.ops.object.select_all (action='DESELECT')          
                         
             ###########################################################
             # REMOVE VERT COLORS, SHAPE KEYS, UVMAPS AND MERGE MATERIALS 
