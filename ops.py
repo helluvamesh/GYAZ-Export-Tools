@@ -83,6 +83,7 @@ class Op_GYAZ_Export_SavePreset (bpy.types.Operator):
         else: 
             
             # check for existing preset with the same name
+            prefs = bpy.context.preferences.addons[__package__].preferences
             presets = prefs.bone_presets
             preset_names = [preset.preset_name for preset in presets]
             if preset_name in preset_names:
@@ -121,9 +122,9 @@ class Op_GYAZ_Export_SavePreset (bpy.types.Operator):
             scene.gyaz_export.active_preset = preset.preset_name
             
             # save user preferences
-            bpy.context.area.type = 'USER_PREFERENCES'
+            bpy.context.area.type = 'PREFERENCES'
             bpy.ops.wm.save_userpref()
-            bpy.context.area.type = 'VIEW_3D'
+            bpy.context.area.type = 'PROPERTIES'
             
         return {'FINISHED'}
     
@@ -138,6 +139,7 @@ class Op_GYAZ_Export_RemovePreset (bpy.types.Operator):
     def execute(self, context):     
         scene = bpy.context.scene
         
+        prefs = bpy.context.preferences.addons[__package__].preferences
         scene_active_preset = getattr (scene.gyaz_export, "active_preset")
         presets = prefs.bone_presets
         preset_len = len (presets)
@@ -159,9 +161,9 @@ class Op_GYAZ_Export_RemovePreset (bpy.types.Operator):
                     scene.gyaz_export.property_unset ("rename_vert_groups_to_extra_bones")
         
         # save user preferences
-        bpy.context.area.type = 'USER_PREFERENCES'
+        bpy.context.area.type = 'PREFERENCES'
         bpy.ops.wm.save_userpref()
-        bpy.context.area.type = 'VIEW_3D'      
+        bpy.context.area.type = 'PROPERTIES'      
             
         return {'FINISHED'}
 
