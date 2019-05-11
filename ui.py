@@ -339,7 +339,7 @@ class SCENE_PT_GYAZ_Export (Panel):
             row.label (icon='BLANK1')
             row.prop (owner, "rigid_anim_name")
             if message1:
-                col.label (text="Scene start end forced", icon='INFO')      
+                col.label (text="Scene start-end forced", icon='INFO')      
         
         row = lay.row (align=True)
         row.scale_y = 2
@@ -504,6 +504,7 @@ def unregister():
     bpy.utils.unregister_class (SCENE_PT_GYAZ_Export_Animation)
     bpy.utils.unregister_class (SCENE_PT_GYAZ_Export)
     bpy.utils.unregister_class (SCENE_PT_GYAZ_Export_Filter)
+    bpy.utils.unregister_class (SCENE_PT_GYAZ_Export_Extras)
     
     
 if __name__ == "__main__":   

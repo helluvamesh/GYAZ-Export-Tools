@@ -19,7 +19,7 @@
 bl_info = {   
  "name": "GYAZ Export Tools",   
  "author": "Andras Gyalog",
- "version": (2, 80, 2),
+ "version": (2, 80, 3),
  "blender": (2, 80, 0),   
  "location": "View3d > Toolshelf > Export FBX",   
  "description": "Extension of Blender's FBX Exporter for exporting static meshes, skeletal meshes and animations",
@@ -120,6 +120,7 @@ class GYAZ_Export_Preferences (AddonPreferences):
     
     texture_folder_name: StringProperty (name='Textures Folder', default='Textures')
     anim_folder_name: StringProperty (name='Animations Folder', default='Animations')
+    mesh_folder_name: StringProperty (name='Meshes Folder', default='')
     
     def draw (self, context):
         lay = self.layout 
@@ -135,6 +136,7 @@ class GYAZ_Export_Preferences (AddonPreferences):
         col = lay.column (align=True)
         col.prop (self, 'texture_folder_name')
         col.prop (self, 'anim_folder_name')
+        col.prop (self, 'mesh_folder_name')
         
         lay.separator ()
         lay.separator ()

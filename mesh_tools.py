@@ -613,10 +613,10 @@ def register():
     
     # panel overrides
     bpy.utils.register_class (UI_UL_GYAZ_UVMaps)
-    bpy.utils.register_class (DATA_PT_uv_texture)
     bpy.utils.register_class (UI_UL_GYAZ_VertexColorList)
+    bpy.utils.register_class (DATA_PT_uv_texture)
     bpy.utils.register_class (DATA_PT_vertex_colors)
-    
+
 
 def unregister():
     bpy.utils.unregister_class (PG_GYAZ_Export_MeshProps)
@@ -641,3 +641,5 @@ def unregister():
     # Blender needs to be restarted for the old panels to exist again
     bpy.utils.unregister_class (UI_UL_GYAZ_UVMaps)
     bpy.utils.unregister_class (UI_UL_GYAZ_VertexColorList)
+    bpy.utils.unregister_class (DATA_PT_uv_texture)
+    bpy.utils.unregister_class (DATA_PT_vertex_colors)

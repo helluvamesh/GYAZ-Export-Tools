@@ -907,6 +907,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             # folder names
             textures_folder = sn(prefs.texture_folder_name) + '/'
             anims_folder = sn(prefs.anim_folder_name) + '/'
+            meshes_folder = sn(prefs.mesh_folder_name) + '/'
  
 
             ###########################################################
@@ -1252,9 +1253,10 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     static_mesh_prefix = static_mesh_prefix if not pack_name.startswith (static_mesh_prefix) else ''
                     organizing_folder = pack_name + '/' if use_organizing_folder else ''
                     
-                    filename = static_mesh_prefix + pack_name + format                         
-                    filepath = root_folder + organizing_folder + filename
-                    os.makedirs (root_folder + organizing_folder, exist_ok=True)
+                    filename = static_mesh_prefix + pack_name + format
+                    folder_path = root_folder + organizing_folder + meshes_folder
+                    filepath = folder_path + filename
+                    os.makedirs (folder_path, exist_ok=True)
                     
                     texture_root = root_folder + organizing_folder[:-1]
                     
@@ -1269,8 +1271,9 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                         organizing_folder = sn(obj.name) + '/' if use_organizing_folder else ''
                         
                         filename = static_mesh_prefix + sn(obj.name) + format
-                        filepath = root_folder + organizing_folder + filename
-                        os.makedirs (root_folder + organizing_folder, exist_ok=True)
+                        folder_path = root_folder + organizing_folder + meshes_folder
+                        filepath = folder_path + filename
+                        os.makedirs (folder_path, exist_ok=True)
                         
                         texture_root = root_folder + organizing_folder[:-1]
                         
@@ -1290,8 +1293,9 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                         organizing_folder = pack_name + '/' if use_organizing_folder else ''
                         
                         filename = skeletal_mesh_prefix + pack_name + format
-                        filepath = root_folder + organizing_folder + filename
-                        os.makedirs (root_folder + organizing_folder, exist_ok=True)
+                        folder_path = root_folder + organizing_folder + meshes_folder
+                        filepath = folder_path + filename
+                        os.makedirs (folder_path, exist_ok=True)
                         
                         texture_root = root_folder + organizing_folder[:-1]
                         
@@ -1310,8 +1314,9 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                             skeletal_mesh_prefix = skeletal_mesh_prefix if not child.name.startswith (skeletal_mesh_prefix) else ''
                             
                             filename = skeletal_mesh_prefix + sn(child.name) + format
-                            filepath = root_folder + organizing_folder + filename
-                            os.makedirs (root_folder + organizing_folder, exist_ok=True)
+                            folder_path = root_folder + organizing_folder + meshes_folder
+                            filepath = folder_path + filename
+                            os.makedirs (folder_path, exist_ok=True)
                             
                             export_info = export_objects (filepath, objects = [final_rig, child])    
                             texture_export_info = export_images (objects = mesh_children, texture_root = texture_root, all_images = True)
@@ -1334,8 +1339,9 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     
                     name = sn(ori_ao_name) if not use_override_character_name else override_character_name
                     separator = '_' if not name == '' else ''
-                    filepath = root_folder + organizing_folder + anims_folder + animation_prefix + name + separator + sn(action.name) + format
-                    os.makedirs (root_folder + organizing_folder + anims_folder, exist_ok=True)
+                    folder_path = root_folder + organizing_folder + anims_folder
+                    filepath = folder_path + animation_prefix + name + separator + sn(action.name) + format
+                    os.makedirs (folder_path, exist_ok=True)
                     
                     set_active_action (action)
                     if not use_scene_start_end:
@@ -1364,10 +1370,11 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     
                     skeletal_mesh_prefix = skeletal_mesh_prefix if not pack_name.startswith (skeletal_mesh_prefix) else ''                            
                     organizing_folder = pack_name + '/' if use_organizing_folder else '/'
-                    filepath = root_folder + organizing_folder + skeletal_mesh_prefix + pack_name + '_' + anim_name + format
+                    folder_path = root_folder + organizing_folder + anims_folder
+                    filepath = folder_path + skeletal_mesh_prefix + pack_name + '_' + anim_name + format
                     texture_root = root_folder + organizing_folder
                     
-                    os.makedirs(root_folder + organizing_folder, exist_ok=True) 
+                    os.makedirs(folder_path, exist_ok=True) 
                         
                     export_info = export_objects (filepath, objects = ori_sel_objs)
                     if not rigid_anim_cubes:
@@ -1379,14 +1386,15 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
 
                         skeletal_mesh_prefix = skeletal_mesh_prefix if not obj.name.startswith (skeletal_mesh_prefix) else ''
                         organizing_folder = sn(obj.name) + '/' if use_organizing_folder else '/'
-                        filepath = root_folder + organizing_folder + skeletal_mesh_prefix + sn(obj.name) + '_' + anim_name + format 
+                        folder_path = root_folder + organizing_folder + anims_folder
+                        filepath = folder_path + skeletal_mesh_prefix + sn(obj.name) + '_' + anim_name + format 
                         
                         texture_root = root_folder + organizing_folder
                         
                         if not use_scene_start_end:
                             adjust_scene_to_action_length (object = obj)
                         
-                        os.makedirs(root_folder + organizing_folder, exist_ok=True)
+                        os.makedirs(folder_path, exist_ok=True)
                         
                         export_info = export_objects (filepath, objects = [obj])
                         if not rigid_anim_cubes:
