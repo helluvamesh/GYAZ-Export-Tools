@@ -28,8 +28,7 @@ from math import radians
 from pathlib import Path
 from bpy.props import *
 
-            
-# popup
+
 def popup (lines, icon, title):
     def draw(self, context):
         for line in lines:
@@ -44,18 +43,21 @@ def list_to_visual_list (list):
         line += str(item)
     return line
 
-# report
+
 def report (self, item, error_or_info):
     self.report({error_or_info}, item)
+
     
 def make_active_only (obj):
     bpy.ops.object.mode_set (mode='OBJECT')
     bpy.ops.object.select_all (action='DESELECT')
     obj.select_set (True)
     bpy.context.view_layer.objects.active = obj
+
     
 def make_active (obj):
     bpy.context.view_layer.objects.active = obj   
+
 
 # safe name
 def sn (line):
@@ -63,7 +65,7 @@ def sn (line):
         line = line.replace (c, '_')
     return (line)
 
-# detect mirrored uvs
+
 def detect_mirrored_uvs (bm, uv_index):
     uv_layer = bm.loops.layers.uv[uv_index]
     mirrored_face_count = 0
@@ -79,7 +81,9 @@ def detect_mirrored_uvs (bm, uv_index):
     else:
         return False   
 
+
 untransformed_matrix = Matrix (([1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1])) 
+ 
                 
 def get_active_action (obj):
     if obj.animation_data is not None:
@@ -773,52 +777,53 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             # render meshes
             
             for obj in meshes_to_export:
-                mesh = obj.data
-                
-                # vert colors
-                if not export_vert_colors:
-                    vcolors = mesh.vertex_colors
-                    for vc in vcolors:
-                        vcolors.remove (vc)
-                else:
-                    vcolors = mesh.vertex_colors
-                    vcolors_to_remove = []
-                    for index, vc in enumerate (vcolors):
-                        if not mesh.gyaz_export.vert_color_export[index]:
-                            vcolors_to_remove.append (vc)
+                if obj.type == 'MESH':
+                    mesh = obj.data
                     
-                    for vc in reversed (vcolors_to_remove):
-                        vcolors.remove (vc)
-                      
-                # shape keys        
-                if not export_shape_keys:
-                    if mesh.shape_keys is not None:
-                        for key in mesh.shape_keys.key_blocks:
-                            obj.shape_key_remove (key)
-                            
-                # uv maps
-                uvmaps = mesh.uv_layers     
-                uvmaps_to_remove = []
-                for index, uvmap in enumerate (uvmaps):
-                    if not mesh.gyaz_export.uv_export[index]:
-                        uvmaps_to_remove.append (uvmap)
+                    # vert colors
+                    if not export_vert_colors:
+                        vcolors = mesh.vertex_colors
+                        for vc in vcolors:
+                            vcolors.remove (vc)
+                    else:
+                        vcolors = mesh.vertex_colors
+                        vcolors_to_remove = []
+                        for index, vc in enumerate (vcolors):
+                            if not mesh.gyaz_export.vert_color_export[index]:
+                                vcolors_to_remove.append (vc)
                         
-                for uvmap in reversed (uvmaps_to_remove):
-                    uvmaps.remove (uvmap)
-                                        
-                # merge materials
-                if obj.data.gyaz_export.merge_materials:
-                
-                    mats = obj.data.materials
-                    for mat in mats:
-                        if len (mats) > 1:
-                            mats.pop (index=0)
+                        for vc in reversed (vcolors_to_remove):
+                            vcolors.remove (vc)
+                          
+                    # shape keys        
+                    if not export_shape_keys:
+                        if mesh.shape_keys is not None:
+                            for key in mesh.shape_keys.key_blocks:
+                                obj.shape_key_remove (key)
+                                
+                    # uv maps
+                    uvmaps = mesh.uv_layers     
+                    uvmaps_to_remove = []
+                    for index, uvmap in enumerate (uvmaps):
+                        if not mesh.gyaz_export.uv_export[index]:
+                            uvmaps_to_remove.append (uvmap)
+                            
+                    for uvmap in reversed (uvmaps_to_remove):
+                        uvmaps.remove (uvmap)
+                                            
+                    # merge materials
+                    if obj.data.gyaz_export.merge_materials:
                     
-                    atlas_name = obj.data.gyaz_export.atlas_name
-                    atlas_material = bpy.data.materials.get (atlas_name)
-                    if atlas_material == None:
-                        atlas_material = bpy.data.materials.new (name=atlas_name)
-                    obj.material_slots[0].material = atlas_material    
+                        mats = obj.data.materials
+                        for mat in mats:
+                            if len (mats) > 1:
+                                mats.pop (index=0)
+                        
+                        atlas_name = obj.data.gyaz_export.atlas_name
+                        atlas_material = bpy.data.materials.get (atlas_name)
+                        if atlas_material == None:
+                            atlas_material = bpy.data.materials.new (name=atlas_name)
+                        obj.material_slots[0].material = atlas_material    
                     
                 
             # collision         
@@ -857,7 +862,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             apply_scale_options = 'FBX_SCALE_NONE'
             axis_forward = '-Z'
             axis_up = 'Y'
-            object_types = {'EMPTY', 'MESH', 'ARMATURE'}
+            object_types = {'EMPTY', 'CAMERA', 'LIGHT', 'ARMATURE', 'MESH', 'OTHER'}
             bake_space_transform = False
             use_custom_props = False
             
@@ -1161,7 +1166,6 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 
             # export objects
             def export_objects (filepath, objects, collision_objects=collision_objects, sockets=sockets):
-
                 bpy.ops.object.mode_set (mode='OBJECT')
                 bpy.ops.object.select_all (action='DESELECT')
                 
@@ -1203,7 +1207,6 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                         obj.select_set (True)
                     
                     def ex ():
-                        
                         # override context
                         ctx = bpy.context.copy()
                         ctx['selected_objects'] = final_selected_objects
@@ -1264,7 +1267,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     texture_export_info = export_images (objects = ori_sel_objs, texture_root = texture_root, all_images = True)
 
                 else:
-
+                    
                     for obj in ori_sel_objs:
                             
                         static_mesh_prefix = static_mesh_prefix if not obj.name.startswith (static_mesh_prefix) else ''
@@ -1474,166 +1477,168 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             # mesh checks
             for obj in meshes_to_export:
                 
-                # materials
-                materials = []
+                if obj.type == 'MESH':
                 
-                for slot in obj.material_slots:
+                    # materials
+                    materials = []
                     
-                    if slot.material is not None:
+                    for slot in obj.material_slots:
                         
-                        materials.append (slot.material)
-                        
-                if len (materials) == 0:
-                    
-                    no_material_objects.append (obj.name)
-                       
-                
-                # uv maps
-                uv_maps = []
-                
-                for index, uv_map in enumerate (obj.data.uv_layers):
-                    if obj.data.gyaz_export.uv_export[index]:
-                        uv_maps.append (uv_map)
-                    
-                if len (uv_maps) == 0:
-                    no_uv_map_objects.append (obj.name)
-                    
-                if len (uv_maps) < 2:
-                    no_second_uv_map_objects.append (obj.name)
-                    
-                
-                # ngons and quads
-                if scene.gyaz_export.allow_quads:
-                    max_face_vert_count = 4 
-                    poly_warning = 'Ngons found: '
-                else:
-                    max_face_vert_count = 3
-                    poly_warning = 'Quads/ngons found: '
-                
-                bm = bmesh.new ()
-                bm.from_object (obj, bpy.context.depsgraph, deform=False, cage=False, face_normals=False)
-                faces = bm.faces
-                ngon_count = len ( [face for face in faces if len(face.verts)>max_face_vert_count] )
-                
-                if ngon_count > 0:
-                    bad_poly_objects.append (obj.name)
-                
-                bm.free ()
-                    
-                # ungrouped verts
-                if asset_type == 'SKELETAL_MESHES':
-                    verts = obj.data.vertices
-                    verts_wo_group = [vert.index for vert in verts if len (vert.groups) == 0]
-                    if len (verts_wo_group) > 0:
-                        ungrouped_vert_objects.append (obj.name)
-                
-        
-                # mirrored uvs
-                if scene.gyaz_export.detect_mirrored_uvs:
-                    if asset_type != 'ANIMATIONS':
-                        
-                        mesh = obj.data
-                        
-                        bm = bmesh.new ()
-                        bm.from_mesh (mesh)
-                        
-                        mirrored_uvs_found = False
-                        mirrored_indices = []
-                        for n in range (len(mesh.uv_layers)):
-                            mirrored_uvs_found = detect_mirrored_uvs (bm, uv_index=n)
-                            if mirrored_uvs_found:
-                                mirrored_indices.append (n)
+                        if slot.material is not None:
                             
-                        if mirrored_uvs_found:
-                            mirrored_uv_objects.append (obj.name + ' (' + list_to_visual_list(mirrored_indices) + ')')
+                            materials.append (slot.material)
+                            
+                    if len (materials) == 0:
+                        
+                        no_material_objects.append (obj.name)
+                           
+                    
+                    # uv maps
+                    uv_maps = []
+                    
+                    for index, uv_map in enumerate (obj.data.uv_layers):
+                        if obj.data.gyaz_export.uv_export[index]:
+                            uv_maps.append (uv_map)
+                        
+                    if len (uv_maps) == 0:
+                        no_uv_map_objects.append (obj.name)
+                        
+                    if len (uv_maps) < 2:
+                        no_second_uv_map_objects.append (obj.name)
+                        
+                    
+                    # ngons and quads
+                    if scene.gyaz_export.allow_quads:
+                        max_face_vert_count = 4 
+                        poly_warning = 'Ngons found: '
+                    else:
+                        max_face_vert_count = 3
+                        poly_warning = 'Quads/ngons found: '
+                    
+                    bm = bmesh.new ()
+                    bm.from_object (obj, bpy.context.depsgraph, deform=False, cage=False, face_normals=False)
+                    faces = bm.faces
+                    ngon_count = len ( [face for face in faces if len(face.verts)>max_face_vert_count] )
+                    
+                    if ngon_count > 0:
+                        bad_poly_objects.append (obj.name)
+                    
+                    bm.free ()
+                        
+                    # ungrouped verts
+                    if asset_type == 'SKELETAL_MESHES':
+                        verts = obj.data.vertices
+                        verts_wo_group = [vert.index for vert in verts if len (vert.groups) == 0]
+                        if len (verts_wo_group) > 0:
+                            ungrouped_vert_objects.append (obj.name)
+                    
+            
+                    # mirrored uvs
+                    if scene.gyaz_export.detect_mirrored_uvs:
+                        if asset_type != 'ANIMATIONS':
+                            
+                            mesh = obj.data
+                            
+                            bm = bmesh.new ()
+                            bm.from_mesh (mesh)
+                            
+                            mirrored_uvs_found = False
+                            mirrored_indices = []
+                            for n in range (len(mesh.uv_layers)):
+                                mirrored_uvs_found = detect_mirrored_uvs (bm, uv_index=n)
+                                if mirrored_uvs_found:
+                                    mirrored_indices.append (n)
                                 
-                        bm.free ()
-                    
-                # textures
-                # get list of texture images
-                if scene.gyaz_export.export_textures:
-                    
-                    images = set ()
-                    for material in materials:
-                        if material is not None:
-                            node_tree = material.node_tree
-                            if node_tree is not None:
-                                nodes = node_tree.nodes
-                                for node in nodes:
-                                    if node.type == 'TEX_IMAGE':
-                                        image = node.image
-                                        images.add (image)
-                                    elif node.type == 'GROUP':
-                                        for node in node.node_tree.nodes:
-                                            if node.type == 'TEX_IMAGE':
-                                                images.add (node.image)
-                                            elif node.type == 'GROUP':
-                                                for node in node.node_tree.nodes:
-                                                    if node.type == 'TEX_IMAGE':
-                                                        images.add (node.image)
-                                                    elif node.type == 'GROUP':
-                                                        for node in node.node_tree.nodes:
-                                                            if node.type == 'TEX_IMAGE':
-                                                                images.add (node.image)
-                                                            elif node.type == 'GROUP':
-                                                                for node in node.node_tree.nodes:
-                                                                    if node.type == 'TEX_IMAGE':
-                                                                        images.add (node.image)
-                                                                    elif node.type == 'GROUP':
-                                                                        for node in node.node_tree.nodes:
-                                                                            if node.type == 'TEX_IMAGE':
-                                                                                images.add (node.image)
-                                                                            elif node.type == 'GROUP':
-                                                                                for node in node.node_tree.nodes:
-                                                                                    if node.type == 'TEX_IMAGE':
-                                                                                        images.add (node.image)
-                                                                                    elif node.type == 'GROUP':                                                                                
-                                                                                        for node in node.node_tree.nodes:
-                                                                                            if node.type == 'TEX_IMAGE':
-                                                                                                images.add (node.image)
-                                                                                            elif node.type == 'GROUP':                                                                                 
-                                                                                                for node in node.node_tree.nodes:
-                                                                                                    if node.type == 'TEX_IMAGE':
-                                                                                                        images.add (node.image)
-                                                                                                    elif node.type == 'GROUP':                                                                                  
-                                                                                                        for node in node.node_tree.nodes:
-                                                                                                            if node.type == 'TEX_IMAGE':
-                                                                                                                images.add (node.image)
-                                                                                                            elif node.type == 'GROUP':                                                                                  
-                                                                                                                for node in node.node_tree.nodes:
-                                                                                                                    if node.type == 'TEX_IMAGE':
-                                                                                                                        images.add (node.image)
-                                                                                                                    elif node.type == 'GROUP':                                                                                  
-                                                                                                                        for node in node.node_tree.nodes:
-                                                                                                                            if node.type == 'TEX_IMAGE':
-                                                                                                                                images.add (node.image)
-                                                                                                                            elif node.type == 'GROUP':                                                                                 
-                                                                                                                                for node in node.node_tree.nodes:
-                                                                                                                                    if node.type == 'TEX_IMAGE':
-                                                                                                                                        images.add (node.image)
-                                                                                                                                    elif node.type == 'GROUP':                                                                                  
-                                                                                                                                        for node in node.node_tree.nodes:
-                                                                                                                                            if node.type == 'TEX_IMAGE':
-                                                                                                                                                images.add (node.image)
-                                                                                                                                            elif node.type == 'GROUP':                                                                                  
-                                                                                                                                                for node in node.node_tree.nodes:
-                                                                                                                                                    if node.type == 'TEX_IMAGE':
-                                                                                                                                                        images.add (node.image)
-                                                                                                                                                    elif node.type == 'GROUP':                                                                                  
-                                                                                                                                                        for node in node.node_tree.nodes:
-                                                                                                                                                            if node.type == 'TEX_IMAGE':
-                                                                                                                                                                images.add (node.image)
-                                                                                                                                                            elif node.type == 'GROUP':                                                                                  
-                                                                                                                                                                for node in node.node_tree.nodes:
-                                                                                                                                                                    if node.type == 'TEX_IMAGE':
-                                                                                                                                                                        images.add (node.image)
-                                                                                                                                                                    elif node.type == 'GROUP':                                                                                  
-                                                                                                                                                                        for node in node.node_tree.nodes:
-                                                                                                                                                                            if node.type == 'TEX_IMAGE':
-                                                                                                                                                                                images.add (node.image)
-                                                                                                                                                                            
-                    images = set (i for i in images if i is not None)
-                    image_info[obj.name] = images
+                            if mirrored_uvs_found:
+                                mirrored_uv_objects.append (obj.name + ' (' + list_to_visual_list(mirrored_indices) + ')')
+                                    
+                            bm.free ()
+                        
+                    # textures
+                    # get list of texture images
+                    if scene.gyaz_export.export_textures:
+                        
+                        images = set ()
+                        for material in materials:
+                            if material is not None:
+                                node_tree = material.node_tree
+                                if node_tree is not None:
+                                    nodes = node_tree.nodes
+                                    for node in nodes:
+                                        if node.type == 'TEX_IMAGE':
+                                            image = node.image
+                                            images.add (image)
+                                        elif node.type == 'GROUP':
+                                            for node in node.node_tree.nodes:
+                                                if node.type == 'TEX_IMAGE':
+                                                    images.add (node.image)
+                                                elif node.type == 'GROUP':
+                                                    for node in node.node_tree.nodes:
+                                                        if node.type == 'TEX_IMAGE':
+                                                            images.add (node.image)
+                                                        elif node.type == 'GROUP':
+                                                            for node in node.node_tree.nodes:
+                                                                if node.type == 'TEX_IMAGE':
+                                                                    images.add (node.image)
+                                                                elif node.type == 'GROUP':
+                                                                    for node in node.node_tree.nodes:
+                                                                        if node.type == 'TEX_IMAGE':
+                                                                            images.add (node.image)
+                                                                        elif node.type == 'GROUP':
+                                                                            for node in node.node_tree.nodes:
+                                                                                if node.type == 'TEX_IMAGE':
+                                                                                    images.add (node.image)
+                                                                                elif node.type == 'GROUP':
+                                                                                    for node in node.node_tree.nodes:
+                                                                                        if node.type == 'TEX_IMAGE':
+                                                                                            images.add (node.image)
+                                                                                        elif node.type == 'GROUP':                                                                                
+                                                                                            for node in node.node_tree.nodes:
+                                                                                                if node.type == 'TEX_IMAGE':
+                                                                                                    images.add (node.image)
+                                                                                                elif node.type == 'GROUP':                                                                                 
+                                                                                                    for node in node.node_tree.nodes:
+                                                                                                        if node.type == 'TEX_IMAGE':
+                                                                                                            images.add (node.image)
+                                                                                                        elif node.type == 'GROUP':                                                                                  
+                                                                                                            for node in node.node_tree.nodes:
+                                                                                                                if node.type == 'TEX_IMAGE':
+                                                                                                                    images.add (node.image)
+                                                                                                                elif node.type == 'GROUP':                                                                                  
+                                                                                                                    for node in node.node_tree.nodes:
+                                                                                                                        if node.type == 'TEX_IMAGE':
+                                                                                                                            images.add (node.image)
+                                                                                                                        elif node.type == 'GROUP':                                                                                  
+                                                                                                                            for node in node.node_tree.nodes:
+                                                                                                                                if node.type == 'TEX_IMAGE':
+                                                                                                                                    images.add (node.image)
+                                                                                                                                elif node.type == 'GROUP':                                                                                 
+                                                                                                                                    for node in node.node_tree.nodes:
+                                                                                                                                        if node.type == 'TEX_IMAGE':
+                                                                                                                                            images.add (node.image)
+                                                                                                                                        elif node.type == 'GROUP':                                                                                  
+                                                                                                                                            for node in node.node_tree.nodes:
+                                                                                                                                                if node.type == 'TEX_IMAGE':
+                                                                                                                                                    images.add (node.image)
+                                                                                                                                                elif node.type == 'GROUP':                                                                                  
+                                                                                                                                                    for node in node.node_tree.nodes:
+                                                                                                                                                        if node.type == 'TEX_IMAGE':
+                                                                                                                                                            images.add (node.image)
+                                                                                                                                                        elif node.type == 'GROUP':                                                                                  
+                                                                                                                                                            for node in node.node_tree.nodes:
+                                                                                                                                                                if node.type == 'TEX_IMAGE':
+                                                                                                                                                                    images.add (node.image)
+                                                                                                                                                                elif node.type == 'GROUP':                                                                                  
+                                                                                                                                                                    for node in node.node_tree.nodes:
+                                                                                                                                                                        if node.type == 'TEX_IMAGE':
+                                                                                                                                                                            images.add (node.image)
+                                                                                                                                                                        elif node.type == 'GROUP':                                                                                  
+                                                                                                                                                                            for node in node.node_tree.nodes:
+                                                                                                                                                                                if node.type == 'TEX_IMAGE':
+                                                                                                                                                                                    images.add (node.image)
+                                                                                                                                                                                
+                        images = set (i for i in images if i is not None)
+                        image_info[obj.name] = images
             
             
             image_set = set ()
