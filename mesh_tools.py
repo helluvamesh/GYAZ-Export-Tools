@@ -45,7 +45,7 @@ def ui_merge_materials (self, context):
 # uv utils        
 class Op_GYAZ_MoveUVMap (bpy.types.Operator):
        
-    bl_idname = "object.gyaz_utility_move_uv_map"  
+    bl_idname = "object.gyaz_move_uv_map"  
     bl_label = "Move UV Map"
     bl_description = "Move active uv map"
     
@@ -127,7 +127,7 @@ class Op_GYAZ_MoveUVMap (bpy.types.Operator):
 
 class Op_GYAZ_BatchSetActiveUVMapByIndex (bpy.types.Operator):
        
-    bl_idname = "object.gyaz_utility_batch_set_active_uv_map_by_index"  
+    bl_idname = "object.gyaz_batch_set_active_uv_map_by_index"  
     bl_label = "Batch Set Active UV Map by Index"
     bl_description = "Set uv map active on all selected objects by the index of the active object's active uv map"
     
@@ -158,7 +158,7 @@ class Op_GYAZ_BatchSetActiveUVMapByIndex (bpy.types.Operator):
 
 class Op_GYAZ_BatchSetActiveUVMapByName (bpy.types.Operator):
        
-    bl_idname = "object.gyaz_utility_batch_set_active_uv_map_by_name"  
+    bl_idname = "object.gyaz_batch_set_active_uv_map_by_name"  
     bl_label = "Batch Set Active UV Map by Name"
     bl_description = "Set uv map active on all selected objects by the name of active object's active uv map"
     
@@ -186,7 +186,31 @@ class Op_GYAZ_BatchSetActiveUVMapByName (bpy.types.Operator):
                                 else:
                                     uv_maps[active_uv_map_name].active_render = True
                               
-        return {'FINISHED'}        
+        return {'FINISHED'}
+    
+    
+class Op_GYAZ_BatchAddUVMap (bpy.types.Operator):
+       
+    bl_idname = "object.gyaz_batch_add_uv_map"  
+    bl_label = "Batch Add UV Map"
+    bl_description = "Add new uv map to all selected objects"
+    
+    name: StringProperty (name='Name')
+    
+    # confirm popup
+    def invoke (self, context, event):
+        wm = bpy.context.window_manager
+        return  wm.invoke_props_dialog (self)
+
+    #operator function
+    def execute(self, context):
+        name = self.name if self.name != '' else 'UVMap'
+        
+        meshes = {obj.data for obj in bpy.context.selected_objects if obj.type == 'MESH'}
+        for mesh in meshes:
+            mesh.uv_layers.new (name=name)
+                              
+        return {'FINISHED'}                
         
         
 # Panel Overrides:
@@ -211,6 +235,7 @@ class DATA_MT_GYAZ_UVUtils (Menu):
         lay.operator (Op_GYAZ_BatchSetActiveUVMapByIndex.bl_idname, text='For Render', icon='RESTRICT_RENDER_OFF').for_render=True
         lay.operator (Op_GYAZ_BatchSetActiveUVMapByName.bl_idname).for_render=False
         lay.operator (Op_GYAZ_BatchSetActiveUVMapByName.bl_idname, text='For Render', icon='RESTRICT_RENDER_OFF').for_render=True
+        lay.operator (Op_GYAZ_BatchAddUVMap.bl_idname)
             
 class DATA_PT_uv_texture (Panel):
     bl_space_type = 'PROPERTIES'
@@ -233,6 +258,7 @@ class DATA_PT_uv_texture (Panel):
         col.enabled = True if not context.space_data.use_pin_id else False
         col.operator ('mesh.uv_texture_add', icon='ADD', text='')
         col.operator ('mesh.uv_texture_remove', icon='REMOVE', text='')
+        col.separator ()
         col.menu ('DATA_MT_GYAZ_UVUtils', text='', icon='DOWNARROW_HLT')
         if uv_count > 1:
             col.separator ()
@@ -609,6 +635,7 @@ def register():
     bpy.utils.register_class (Op_GYAZ_MoveUVMap)
     bpy.utils.register_class (Op_GYAZ_BatchSetActiveUVMapByIndex)
     bpy.utils.register_class (Op_GYAZ_BatchSetActiveUVMapByName)
+    bpy.utils.register_class (Op_GYAZ_BatchAddUVMap)
     bpy.utils.register_class (DATA_MT_GYAZ_UVUtils)
     
     # panel overrides
@@ -635,6 +662,7 @@ def unregister():
     bpy.utils.unregister_class (Op_GYAZ_MoveUVMap)
     bpy.utils.unregister_class (Op_GYAZ_BatchSetActiveUVMapByIndex)
     bpy.utils.unregister_class (Op_GYAZ_BatchSetActiveUVMapByName)
+    bpy.utils.unregister_class (Op_GYAZ_BatchAddUVMap)
     bpy.utils.unregister_class (DATA_MT_GYAZ_UVUtils)
     
     # panel overrides (the actual overrides can't be unregistered)
