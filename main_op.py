@@ -1516,7 +1516,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                         poly_warning = 'Quads/ngons found: '
                     
                     bm = bmesh.new ()
-                    bm.from_object (obj, bpy.context.depsgraph, deform=False, cage=False, face_normals=False)
+                    bm.from_object (obj, bpy.context.evaluated_depsgraph_get(), deform=False, cage=False, face_normals=False)
                     faces = bm.faces
                     ngon_count = len ( [face for face in faces if len(face.verts)>max_face_vert_count] )
                     
