@@ -208,7 +208,9 @@ class Op_GYAZ_BatchAddUVMap (bpy.types.Operator):
         
         meshes = {obj.data for obj in bpy.context.selected_objects if obj.type == 'MESH'}
         for mesh in meshes:
-            mesh.uv_layers.new (name=name)
+            uv_map = mesh.uv_layers.new (name=name)
+            if uv_map is not None:
+                uv_map.active = True
                               
         return {'FINISHED'}                
         
