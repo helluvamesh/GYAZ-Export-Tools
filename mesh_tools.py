@@ -143,15 +143,15 @@ class Op_GYAZ_BatchSetActiveUVMapByIndex (bpy.types.Operator):
         if len (uvmaps) > 0:
             active_uv_map_index = uvmaps.active_index
             
-            for obj in selected_objects:
-                if obj.type == 'MESH':
-                    uv_maps = obj.data.uv_layers
-                    if len (uv_maps) > 0:
-                        if active_uv_map_index < len(uv_maps):
-                            if not self.for_render:
-                                uv_maps.active_index = active_uv_map_index
-                            else:
-                                uv_maps[active_uv_map_index].active_render = True
+            meshes = {obj.data for obj in selected_objects if obj.type == 'MESH'}
+            for mesh in meshes:
+                uv_maps = mesh.uv_layers
+                if len (uv_maps) > 0:
+                    if active_uv_map_index < len(uv_maps):
+                        if not self.for_render:
+                            uv_maps.active_index = active_uv_map_index
+                        else:
+                            uv_maps[active_uv_map_index].active_render = True
                               
         return {'FINISHED'}
     
@@ -175,16 +175,16 @@ class Op_GYAZ_BatchSetActiveUVMapByName (bpy.types.Operator):
             active_uv_map_index = uvmaps.active_index
             active_uv_map_name = uvmaps[active_uv_map_index].name
             
-            for obj in selected_objects:
-                if obj.type == 'MESH':
-                    uv_maps = obj.data.uv_layers
-                    if len (uv_maps) > 0:
-                        for index, uv_map in enumerate(uv_maps):
-                            if uv_map.name == active_uv_map_name:
-                                if not self.for_render:
-                                    uv_maps.active_index = index
-                                else:
-                                    uv_maps[active_uv_map_name].active_render = True
+            meshes = {obj.data for obj in selected_objects if obj.type == 'MESH'}
+            for mesh in meshes:
+                uv_maps = mesh.uv_layers
+                if len (uv_maps) > 0:
+                    for index, uv_map in enumerate(uv_maps):
+                        if uv_map.name == active_uv_map_name:
+                            if not self.for_render:
+                                uv_maps.active_index = index
+                            else:
+                                uv_maps[active_uv_map_name].active_render = True
                               
         return {'FINISHED'}
     
