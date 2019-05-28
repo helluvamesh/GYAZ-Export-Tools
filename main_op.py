@@ -1830,9 +1830,13 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     
                     path_ok = True
                     if owner.export_folder_mode == 'PATH':
-                        if not os.path.isdir (root_folder):
+                        if root_folder.startswith ('//'):
+                            report (self, "Use an absolute path for export folder instead of a relative path.", "WARNING")
+                            path_ok = False
+                        elif not os.path.isdir (root_folder):
                             report (self, "Export path doesn't exist.", "WARNING")
                             path_ok = False
+
                         
                     if path_ok:
                         
