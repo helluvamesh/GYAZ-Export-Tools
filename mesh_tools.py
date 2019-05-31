@@ -54,7 +54,7 @@ class Op_GYAZ_MoveUVMap (bpy.types.Operator):
     #operator function
     def execute(self, context):
         
-        mesh = bpy.context.mesh
+        mesh = bpy.context.object.data
         uvmaps = mesh.uv_layers
         map_count = len (uvmaps)
                         
@@ -114,6 +114,88 @@ class Op_GYAZ_MoveUVMap (bpy.types.Operator):
                         
                         uvmaps.get(ori_active_name).active = True
                         uvmaps.get(ori_active_render).active_render = True
+                    
+
+                if self.up:
+                    move_up ()
+                else:
+                    move_down ()        
+
+                              
+        return {'FINISHED'}
+    
+    
+class Op_GYAZ_MoveVertColor (bpy.types.Operator):
+       
+    bl_idname = "object.gyaz_move_vert_color"  
+    bl_label = "Move Vertex Color"
+    bl_description = "Move active vertex color"
+    
+    up: BoolProperty (default=False)
+
+    #operator function
+    def execute(self, context):
+        
+        mesh = bpy.context.object.data
+        vert_colors = mesh.vertex_colors
+        map_count = len (vert_colors)
+                                
+        if map_count >= 8:
+            report (self, 'Cannot reorder 8 vertex colors.', 'WARNING')
+        else:
+            
+            if map_count > 0:
+
+                def move_down ():
+                    
+                    save__export = list(mesh.gyaz_export.vert_color_export[:])
+                    
+                    ori_active_index = vert_colors.active_index
+                    ori_active_name = vert_colors[ori_active_index].name
+                    for vcol in vert_colors:
+                        if vcol.active_render:
+                            ori_active_render = vcol.name
+                    
+                    if ori_active_index != map_count-1:
+                    
+                        def move_to_bottom (skip):
+                            active_index = ori_active_index + skip
+                            vert_colors.active_index = active_index
+                            active_name = vert_colors[vert_colors.active_index].name
+                            new = vert_colors.new ()
+                            vert_colors.remove (vert_colors[active_index])
+                            vert_colors.active_index = 0
+                            vert_colors[-1].name = active_name
+
+                        move_to_bottom (skip=0)
+                        for n in range (0, map_count-ori_active_index-2):
+                            move_to_bottom (skip=1)        
+
+                        vert_colors.get(ori_active_name).active = True
+                        vert_colors.get(ori_active_render).active_render = True
+                    
+                    # update export bools
+                    new_export = save__export.copy ()
+                    new_export[ori_active_index] = save__export[vert_colors.active_index]
+                    new_export[vert_colors.active_index] = save__export[ori_active_index]
+                    mesh.gyaz_export.vert_color_export = new_export
+                    
+                def move_up ():
+                    
+                    ori_active_index = vert_colors.active_index
+                    ori_active_name = vert_colors[ori_active_index].name
+                    for vcol in vert_colors:
+                        if vcol.active_render:
+                            ori_active_render = vcol.name
+                    
+                    if ori_active_index != 0:
+                    
+                        vert_colors.active_index -= 1
+                        
+                        move_down ()
+                        
+                        vert_colors.get(ori_active_name).active = True
+                        vert_colors.get(ori_active_render).active_render = True
                     
 
                 if self.up:
@@ -302,6 +384,10 @@ class DATA_PT_vertex_colors (Panel):
         col.enabled = True if not context.space_data.use_pin_id else False
         col.operator ('mesh.vertex_color_add', icon='ADD', text='')
         col.operator ('mesh.vertex_color_remove', icon='REMOVE', text='')
+        if len (mesh.vertex_colors) > 1:
+            col.separator ()
+            col.operator (Op_GYAZ_MoveVertColor.bl_idname, text='', icon='TRIA_UP').up = True
+            col.operator (Op_GYAZ_MoveVertColor.bl_idname, text='', icon='TRIA_DOWN').up = False            
     
     #when the buttons should show up    
     @classmethod
@@ -635,6 +721,8 @@ def register():
     
     # uv utils
     bpy.utils.register_class (Op_GYAZ_MoveUVMap)
+    bpy.utils.register_class (Op_GYAZ_MoveVertColor)
+    
     bpy.utils.register_class (Op_GYAZ_BatchSetActiveUVMapByIndex)
     bpy.utils.register_class (Op_GYAZ_BatchSetActiveUVMapByName)
     bpy.utils.register_class (Op_GYAZ_BatchAddUVMap)
@@ -662,6 +750,8 @@ def unregister():
     
     # uv utils
     bpy.utils.unregister_class (Op_GYAZ_MoveUVMap)
+    bpy.utils.unregister_class (Op_GYAZ_MoveVertColor)
+    
     bpy.utils.unregister_class (Op_GYAZ_BatchSetActiveUVMapByIndex)
     bpy.utils.unregister_class (Op_GYAZ_BatchSetActiveUVMapByName)
     bpy.utils.unregister_class (Op_GYAZ_BatchAddUVMap)
