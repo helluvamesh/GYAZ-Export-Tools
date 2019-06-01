@@ -21,7 +21,7 @@
 ##########################################################################################################
 
 
-import bpy
+import bpy, os
 from bpy.types import PropertyGroup, UIList, Scene, Object, Mesh
 from bpy.props import *
 
