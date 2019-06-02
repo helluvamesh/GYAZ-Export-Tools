@@ -92,7 +92,6 @@ class GYAZ_Export_Preferences (AddonPreferences):
     texture_compression: FloatProperty(name='Texture Compression', default=0.15, min=0, max=1)
         
     use_prefixes: BoolProperty (name='Add Prefixes', default=True, description="Add prefixes to asset names. Set up prefixes in User Preferences>Addons") 
-    remove_boneless_vert_weights: BoolProperty (name='Clean Vert Groups', default=True, description="Remove vertex groups without a bone with the same name")
     add_end_bones: BoolProperty (name='Add End Bones', default=False, description='Add a bone to the end of bone chains')
     check_for_second_uv_map: BoolProperty (name='Check for 2nd UV Map', default=False, description='Check for 2nd uv map when exporting static meshes')
     detect_mirrored_uvs: BoolProperty (name='Detect Mirrored UVs', default=True, description='Look for mirrored uvs that cause incorrect shading. Slow with high-poly meshes with multiple uv maps')
@@ -109,14 +108,14 @@ class GYAZ_Export_Preferences (AddonPreferences):
     allow_quads: BoolProperty (name='Allow Quads', default=False, description='Allow quads. Ngons are never allowed')
     
     skeletal_mesh_limit_bone_influences: EnumProperty (name='Max Bone Inflences', description="Limit bone influences by vertex",
-    items=(
-        ('1', '1 weight/vertex', ''),
-        ('2', '2 weights/vertex', ''),
-        ('4', '4 weights/vertex', ''),
-        ('8', '8 weights/vertex', ''),
-        ('unlimited', 'unlimited', '')
-        ),
-    default='4')
+        items=(
+            ('1', '1 Bone Weight / Vertex', ''),
+            ('2', '2 Bone Weights / Vertex', ''),
+            ('4', '4 Bone Weights / Vertex', ''),
+            ('8', '8 Bone Weights / Vertex', ''),
+            ('unlimited', 'Unlimited Bone Weights / Vertex', '')
+            ),
+        default='4')
     
     texture_folder_name: StringProperty (name='Textures Folder', default='Textures')
     anim_folder_name: StringProperty (name='Animations Folder', default='Animations')
@@ -151,7 +150,6 @@ class GYAZ_Export_Preferences (AddonPreferences):
         lay.prop (self, "allow_quads")
         lay.label (text='')
         lay.prop (self, "add_end_bones")
-        lay.prop (self, "remove_boneless_vert_weights")
         lay.prop (self, "skeletal_mesh_limit_bone_influences")
         
         lay.label (text='')      

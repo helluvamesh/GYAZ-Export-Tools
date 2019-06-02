@@ -216,13 +216,12 @@ class SCENE_PT_GYAZ_Export (Panel):
             
             icon = 'SOLO_OFF' if not owner.show_debug_props else 'SOLO_ON'
             row.prop (owner, "show_debug_props", text='', icon=icon, emboss=False)
-            col = lay.column (align=True)     
+            col = lay.column (align=True)
             col.prop (owner, "texture_format_mode", text='Texture')
             col.prop (owner, "texture_format_override", text='Override')
             lay.prop (owner, "texture_compression", slider=True)
             col = lay.column (align=True)    
             col.prop (owner, "use_prefixes")
-            col.prop (owner, "remove_boneless_vert_weights")
             col.prop (owner, "add_end_bones")
             col.prop (owner, "check_for_second_uv_map")
             col.prop (owner, "detect_mirrored_uvs")
@@ -288,9 +287,7 @@ class SCENE_PT_GYAZ_Export (Panel):
             col.prop (owner, "skeletal_mesh_apply_mods")
             col.prop (owner, "skeletal_mesh_vcolors")
             col.prop (owner, "skeletal_shapes")
-            row = col.row (align=True)
-            row.label (icon='BLANK1')
-            row.prop (owner, "skeletal_mesh_limit_bone_influences", text='')
+            col.prop (owner, "skeletal_mesh_limit_bone_influences", text='')
             col.prop (owner, "export_textures")
             if owner.export_textures:
                 col.prop (owner, "export_only_textures")

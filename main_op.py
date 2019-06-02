@@ -703,24 +703,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                             
                 
             bpy.ops.object.mode_set (mode='OBJECT')
-
-     
-            #######################################################
-            # CHECK FOR WEIGHTS WITHOUT A BONE
-            #######################################################
-                
-            if asset_type == 'SKELETAL_MESHES' or asset_type == 'ANIMATIONS':
-                
-                remove_boneless_vert_weights = scene.gyaz_export.remove_boneless_vert_weights
-                
-                if remove_boneless_vert_weights:
-                    
-                    for child in mesh_children:
-                        vgroups = child.vertex_groups
-                        for vgroup in vgroups:
-                            if vgroup.name not in bone_list:
-                                vgroups.remove (vgroup)
-                                    
+            
                                     
             #######################################################
             # LIMIT BONE INFLUENCES BY VERTEX
@@ -844,15 +827,6 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             # EXPORT OPERATOR PROPS
             #######################################################
             
-            if asset_type == 'STATIC_MESHES':
-                apply_mods = owner.static_mesh_apply_mods
-            elif asset_type == 'SKELETAL_MESHES':
-                apply_mods = owner.skeletal_mesh_apply_mods
-            elif asset_type == 'RIGID_ANIMATIONS':
-                apply_mods = owner.rigid_anim_apply_mods
-            else:
-                apply_mods = False
-                
             # FBX EXPORTER SETTINGS:
             # MAIN
             use_selection = True
@@ -872,7 +846,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             batch_mode = 'OFF'
             embed_textures = False
             # GEOMETRIES
-            use_mesh_modifiers = apply_mods
+            use_mesh_modifiers = True
             use_mesh_modifiers_render = True
             mesh_smooth_type = owner.mesh_smoothing
             use_mesh_edges = False

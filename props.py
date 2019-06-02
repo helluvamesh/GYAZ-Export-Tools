@@ -120,13 +120,13 @@ class PG_GYAZ_ExportProps (PropertyGroup):
     actions: CollectionProperty (type=PG_GYAZ_export_ExportActions)
     actions_active_index: IntProperty (default=0)
 
-    skeletal_mesh_limit_bone_influences: EnumProperty (name='max bone inflences', description="Limit bone influences by vertex",
+    skeletal_mesh_limit_bone_influences: EnumProperty (name='Max Bone Inflences', description="Limit bone influences by vertex",
         items=(
-            ('1', '1 weight/vertex', ''),
-            ('2', '2 weights/vertex', ''),
-            ('4', '4 weights/vertex', ''),
-            ('8', '8 weights/vertex', ''),
-            ('unlimited', 'unlimited', '')
+            ('1', '1 Bone Weight / Vertex', ''),
+            ('2', '2 Bone Weights / Vertex', ''),
+            ('4', '4 Bone Weights / Vertex', ''),
+            ('8', '8 Bone Weights / Vertex', ''),
+            ('unlimited', 'Unlimited Bone Weights / Vertex', '')
             ),
         default=prefs.skeletal_mesh_limit_bone_influences)
     
@@ -228,7 +228,6 @@ class PG_GYAZ_ExportProps (PropertyGroup):
     show_options: BoolProperty (name='Show Options', default=True)
     
     use_prefixes: BoolProperty (name='Add Prefixes', default=prefs.use_prefixes, description="Add prefixes to asset names. Set up prefixes in User Preferences>Addons") 
-    remove_boneless_vert_weights: BoolProperty (name='Clean Vert Groups', default=prefs.remove_boneless_vert_weights, description="Remove vertex groups without a bone with the same name")
     add_end_bones: BoolProperty (name='Add End Bones', default=prefs.add_end_bones, description='Add a bone to the end of bone chains')
     check_for_second_uv_map: BoolProperty (name='Check for 2nd UV Map', default=prefs.check_for_second_uv_map, description='Check for 2nd uv map when exporting static meshes')
     detect_mirrored_uvs: BoolProperty (name='Detect Mirrored UVs', default=prefs.detect_mirrored_uvs, description='Look for mirrored uvs that cause incorrect shading. Slow with high-poly meshes with multiple uv maps')
@@ -247,10 +246,6 @@ class PG_GYAZ_ExportProps (PropertyGroup):
     filter_string: StringProperty (default='')
     
     filter_type: EnumProperty (items=(('START', 'START', ''), ('IN', 'IN', ''), ('END', 'END', '')), default='IN')
-    
-    static_mesh_apply_mods: BoolProperty (name='Apply Modifiers', default=False)
-    skeletal_mesh_apply_mods: BoolProperty (name='Apply Modifiers', default=False, description='Shape keys will NOT be exported')
-    rigid_anim_apply_mods: BoolProperty (name='Apply Modifiers', default=False, description='Shape keys will NOT be exported')
     
     static_mesh_vcolors: BoolProperty (name='Vertex Colors', default=True)
     skeletal_mesh_vcolors: BoolProperty (name='Vertex Colors', default=True)
