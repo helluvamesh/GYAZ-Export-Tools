@@ -265,7 +265,6 @@ class SCENE_PT_GYAZ_Export (Panel):
         if asset_type == 'STATIC_MESHES':
             col.prop (owner, "use_static_mesh_organizing_folder")
             col.prop (owner, "static_mesh_clear_transforms")
-            col.prop (owner, "static_mesh_apply_mods")
             col.prop (owner, "static_mesh_vcolors")
             col.prop (owner, "export_collision")
             col.prop (owner, "export_sockets")
@@ -284,7 +283,6 @@ class SCENE_PT_GYAZ_Export (Panel):
         elif asset_type == 'SKELETAL_MESHES':
             col.prop (owner, "use_skeletal_organizing_folder")          
             col.prop (owner, "skeletal_clear_transforms")
-            col.prop (owner, "skeletal_mesh_apply_mods")
             col.prop (owner, "skeletal_mesh_vcolors")
             col.prop (owner, "skeletal_shapes")
             col.prop (owner, "skeletal_mesh_limit_bone_influences", text='')
@@ -310,7 +308,6 @@ class SCENE_PT_GYAZ_Export (Panel):
 
         elif asset_type == 'RIGID_ANIMATIONS':
             col.prop (owner, "use_rigid_anim_organizing_folder")
-            col.prop (owner, "rigid_anim_apply_mods")
             col.prop (owner, "rigid_anim_vcolors")
             col.prop (owner, "rigid_anim_shapes")
             row = col.row ()
