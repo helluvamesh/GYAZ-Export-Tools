@@ -194,11 +194,11 @@ class PG_GYAZ_ExportProps (PropertyGroup):
     static_mesh_clear_transforms: BoolProperty (default=True, name='Clear Transforms', description="Clear object transforms")
     skeletal_clear_transforms: BoolProperty (default=True, name='Clear Transforms', description="Clear object transforms. Armature transformation will always be cleared if root motion is calculated from a bone")
     
-    static_mesh_gather_from_collection: BoolProperty (default=False, name='Active Collection', description="Gather objects from the active object's collection.")
-    rigid_anim_gather_from_collection: BoolProperty (default=False, name='Active Collection', description="Gather objects from the active object's collection.")
+    static_mesh_gather_from_collection: BoolProperty (default=False, name='Active Collection', description="Gather objects from the active object's collection")
+    rigid_anim_gather_from_collection: BoolProperty (default=False, name='Active Collection', description="Gather objects from the active object's collection")
     
-    static_mesh_gather_nested: BoolProperty (default=True, name='Nested Collections', description="If 'Gather from Collection', also gather objects from nested collections.")
-    rigid_anim_gather_nested: BoolProperty (default=True, name='Nested Collections', description="If 'Gather from Collection', also gather objects from nested collections.")
+    static_mesh_gather_nested: BoolProperty (default=True, name='Nested Collections', description="If 'Gather from Collection', also gather objects from nested collections")
+    rigid_anim_gather_nested: BoolProperty (default=True, name='Nested Collections', description="If 'Gather from Collection', also gather objects from nested collections")
     
     texture_format_mode: EnumProperty(
         name='Texture Format',

@@ -66,11 +66,11 @@ class GYAZ_Export_Preferences (AddonPreferences):
 
     bone_presets: CollectionProperty (type=GYAZ_Export_BonePresetItem)
     
-    static_mesh_prefix: StringProperty (name='Static Mesh Prefix', default='SM_')
-    skeletal_mesh_prefix: StringProperty (name='Skeletal Mesh Prefix', default='SK_')
-    material_prefix: StringProperty (name='Material Prefix', default='M_')
-    texture_prefix: StringProperty (name='Texture Prefix', default='T_')
-    animation_prefix: StringProperty (name='Animation Prefix', default='A_')
+    static_mesh_prefix: StringProperty (name='Static Mesh Prefix', default='SM_', description="Used as a suffix, if starts with an underscore")
+    skeletal_mesh_prefix: StringProperty (name='Skeletal Mesh Prefix', default='SK_', description="Used as a suffix, if starts with an underscore")
+    material_prefix: StringProperty (name='Material Prefix', default='M_', description="Used as a suffix, if starts with an underscore")
+    texture_prefix: StringProperty (name='Texture Prefix', default='T_', description="Used as a suffix, if starts with an underscore")
+    animation_prefix: StringProperty (name='Animation Prefix', default='A_', description="Used as a suffix, if starts with an underscore")
     
     texture_format_mode: EnumProperty(
         name='Texture Format',
