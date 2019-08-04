@@ -168,7 +168,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     objects_ = {obj for obj in active_collection.objects if obj.gyaz_export.export}
                     if gather_nested:
                         def gather(collection):
-                            objects_.update(set(obj for obj in collection.objects if obj.type == 'MESH' and obj.gyaz_export.export))
+                            objects_.update(set(obj for obj in collection.objects if obj.gyaz_export.export))
                             for col in collection.children:
                                 gather(col)
                         for col in active_collection.children:
