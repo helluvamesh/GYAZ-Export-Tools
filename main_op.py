@@ -143,10 +143,42 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
         scene_objects = scene.objects
         ori_ao = bpy.context.active_object
         ori_ao_name = bpy.context.active_object.name
-        ori_sel_objs = [obj for obj in bpy.context.selected_objects if obj.gyaz_export.export]
         mesh_children = [child for child in ori_ao.children if child.type == 'MESH' and child.gyaz_export.export]
-
-        asset_type = owner.skeletal_asset_type if ori_ao.type == 'ARMATURE' else owner.rigid_asset_type          
+        
+        asset_type = owner.skeletal_asset_type if ori_ao.type == 'ARMATURE' else owner.rigid_asset_type   
+        
+        # gather all objects from active collection
+        if asset_type == 'STATIC_MESHES' or asset_type == 'RIGID_ANIMATIONS':
+            if asset_type == 'STATIC_MESHES':
+                gather_from_collection = owner.static_mesh_gather_from_collection
+                gather_nested = owner.static_mesh_gather_nested
+            elif asset_type == 'RIGID_ANIMATIONS':
+                gather_from_collection = owner.rigid_anim_gather_from_collection
+                gather_nested = owner.rigid_anim_gather_nested            
+            
+            if not gather_from_collection:
+                ori_sel_objs = [obj for obj in bpy.context.selected_objects if obj.gyaz_export.export]
+            else:
+                name = ori_ao.name
+                collections = bpy.data.collections
+                x = [col for col in collections if name in col.objects]
+                if x:
+                    active_collection = x[0]
+                    
+                    objects_ = {obj for obj in active_collection.objects if obj.gyaz_export.export}
+                    if gather_nested:
+                        def gather(collection):
+                            objects_.update(set(obj for obj in collection.objects if obj.type == 'MESH' and obj.gyaz_export.export))
+                            for col in collection.children:
+                                gather(col)
+                        for col in active_collection.children:
+                            gather(col)
+                    
+                    ori_sel_objs = list(objects_)
+                else:
+                    ori_sel_objs = [obj for obj in bpy.context.selected_objects if obj.gyaz_export.export]
+        else:
+            ori_sel_objs = [obj for obj in bpy.context.selected_objects if obj.gyaz_export.export]
                 
         if asset_type == 'STATIC_MESHES' or asset_type == 'RIGID_ANIMATIONS':
             meshes_to_export = ori_sel_objs
@@ -882,12 +914,49 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 texture_prefix = sn(prefs.texture_prefix)
                 animation_prefix = sn(prefs.animation_prefix)
                 
+                # if prefix starts with an underscore, use a suffix instead
+                if static_mesh_prefix.startswith('_'):
+                    static_mesh_suffix = static_mesh_prefix
+                    static_mesh_prefix = ''
+                else:
+                    static_mesh_suffix = ''
+                    
+                if skeletal_mesh_prefix.startswith('_'):
+                    skeletal_mesh_suffix = skeletal_mesh_prefix
+                    skeletal_mesh_prefix = ''
+                else:
+                    skeletal_mesh_suffix = ''
+                    
+                if material_prefix.startswith('_'):
+                    material_suffix = material_prefix
+                    material_prefix = ''
+                else:
+                    material_suffix = ''
+                    
+                if texture_prefix.startswith('_'):
+                    texture_suffix = texture_prefix
+                    texture_prefix = ''
+                else:
+                    texture_suffix = ''
+                    
+                if animation_prefix.startswith('_'):
+                    animation_suffix = animation_prefix
+                    animation_prefix = ''
+                else:
+                    animation_suffix = ''           
+                
             else:
                 static_mesh_prefix = ''
                 skeletal_mesh_prefix = ''
                 material_prefix = ''
                 texture_prefix = ''
                 animation_prefix = ''
+                
+                static_mesh_suffix = ''
+                skeletal_mesh_suffix = ''
+                material_suffix = ''
+                texture_suffix= ''
+                animation_suffix = ''
                 
             # folder names
             textures_folder = sn(prefs.texture_folder_name) + '/'
@@ -983,9 +1052,10 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                             final_extension_index = image_formats.index (final_image_format)
                             final_extension = image_extensions [final_extension_index]
                             
-                            texture_prefix = prefs.texture_prefix if not new_image.name.startswith (prefs.texture_prefix) else ''  
+                            prefix = texture_prefix if not new_image.name.startswith (texture_prefix) else ''  
+                            suffix = texture_suffix if not new_image.name.endswith (texture_suffix) else ''  
                                 
-                            new_image.filepath = texture_folder + texture_prefix + sn(new_image.name) + '.' + final_extension
+                            new_image.filepath = texture_folder + prefix + sn(new_image.name) + suffix + '.' + final_extension
                             new_image.filepath = os.path.abspath ( bpy.path.abspath (new_image.filepath) )
         
                                 
@@ -1084,12 +1154,12 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                                 materials.add (material)
                         
                     # add prefix to materials
-                    material_prefix = prefs.material_prefix
-                    
                     for material in materials:
-                        if not material.name.startswith (material_prefix):
-                            material.name = material_prefix + material.name
- 
+                        name = material.name
+                        prefix = material_prefix if not name.startswith(material_prefix) else ''
+                        suffix = material_suffix if not name.endswith(material_suffix) else ''
+                        material.name = prefix + name + suffix
+
  
             ###########################################################
             # ANIMATION FUNCTIONS
@@ -1233,10 +1303,11 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
      
                 if pack_objects:
                     
-                    static_mesh_prefix = static_mesh_prefix if not pack_name.startswith (static_mesh_prefix) else ''
+                    prefix = static_mesh_prefix if not pack_name.startswith(static_mesh_prefix) else ''
+                    suffix = static_mesh_suffix if not pack_name.endswith(static_mesh_suffix) else ''
                     organizing_folder = pack_name + '/' if use_organizing_folder else ''
                     
-                    filename = static_mesh_prefix + pack_name + format
+                    filename = prefix + pack_name + suffix + format
                     folder_path = root_folder + organizing_folder + meshes_folder
                     filepath = folder_path + filename
                     os.makedirs (folder_path, exist_ok=True)
@@ -1250,10 +1321,11 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     
                     for obj in ori_sel_objs:
                             
-                        static_mesh_prefix = static_mesh_prefix if not obj.name.startswith (static_mesh_prefix) else ''
+                        prefix = static_mesh_prefix if not obj.name.startswith (static_mesh_prefix) else ''
+                        suffix = static_mesh_suffix if not obj.name.endswith (static_mesh_suffix) else ''
                         organizing_folder = sn(obj.name) + '/' if use_organizing_folder else ''
                         
-                        filename = static_mesh_prefix + sn(obj.name) + format
+                        filename = prefix + sn(obj.name) + suffix + format
                         folder_path = root_folder + organizing_folder + meshes_folder
                         filepath = folder_path + filename
                         os.makedirs (folder_path, exist_ok=True)
@@ -1272,10 +1344,11 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     make_active_only (final_rig)
                     if len (mesh_children) > 0:        
                     
-                        skeletal_mesh_prefix = skeletal_mesh_prefix if not pack_name.startswith (skeletal_mesh_prefix) else ''
+                        prefix = skeletal_mesh_prefix if not pack_name.startswith (skeletal_mesh_prefix) else ''
+                        suffix = skeletal_mesh_suffix if not pack_name.endswith (skeletal_mesh_suffix) else ''
                         organizing_folder = pack_name + '/' if use_organizing_folder else ''
                         
-                        filename = skeletal_mesh_prefix + pack_name + format
+                        filename = prefix + pack_name + suffix + format
                         folder_path = root_folder + organizing_folder + meshes_folder
                         filepath = folder_path + filename
                         os.makedirs (folder_path, exist_ok=True)
@@ -1294,9 +1367,10 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     if len (mesh_children) > 0:
                         for child in mesh_children:
                                 
-                            skeletal_mesh_prefix = skeletal_mesh_prefix if not child.name.startswith (skeletal_mesh_prefix) else ''
+                            prefix = skeletal_mesh_prefix if not child.name.startswith (skeletal_mesh_prefix) else ''
+                            suffix = skeletal_mesh_suffix if not child.name.endswith (skeletal_mesh_suffix) else ''
                             
-                            filename = skeletal_mesh_prefix + sn(child.name) + format
+                            filename = prefix + sn(child.name) + suffix + format
                             folder_path = root_folder + organizing_folder + meshes_folder
                             filepath = folder_path + filename
                             os.makedirs (folder_path, exist_ok=True)
@@ -1323,7 +1397,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     name = sn(ori_ao_name) if not use_override_character_name else override_character_name
                     separator = '_' if not name == '' else ''
                     folder_path = root_folder + organizing_folder + anims_folder
-                    filepath = folder_path + animation_prefix + name + separator + sn(action.name) + format
+                    filepath = folder_path + animation_prefix + name + separator + sn(action.name) + animation_suffix + format
                     os.makedirs (folder_path, exist_ok=True)
                     
                     set_active_action (action)
@@ -1347,14 +1421,19 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 anim_name = sn(owner.rigid_anim_name)
                 rename_materials (objects = ori_sel_objs)               
                 if rigid_anim_cubes:
-                    skeletal_mesh_prefix = animation_prefix
+                    prefix_ = animation_prefix
+                    suffix_ = animation_suffix
+                else:
+                    prefix_ = skeletal_mesh_prefix
+                    suffix_ = skeletal_mesh_suffix
                                 
                 if pack_objects:
                     
-                    skeletal_mesh_prefix = skeletal_mesh_prefix if not pack_name.startswith (skeletal_mesh_prefix) else ''                            
+                    prefix = prefix_ if not pack_name.startswith(prefix_) else ''                            
+                    suffix = suffix_ if not pack_name.startswith(suffix_) else ''                            
                     organizing_folder = pack_name + '/' if use_organizing_folder else '/'
                     folder_path = root_folder + organizing_folder + anims_folder
-                    filepath = folder_path + skeletal_mesh_prefix + pack_name + '_' + anim_name + format
+                    filepath = folder_path + prefix + pack_name + '_' + anim_name + suffix + format
                     texture_root = root_folder + organizing_folder
                     
                     os.makedirs(folder_path, exist_ok=True) 
@@ -1367,10 +1446,11 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 
                     for obj in ori_sel_objs:
 
-                        skeletal_mesh_prefix = skeletal_mesh_prefix if not obj.name.startswith (skeletal_mesh_prefix) else ''
+                        prefix = prefix_ if not obj.name.startswith(prefix_) else ''
+                        suffix = suffix_ if not obj.name.startswith(suffix_) else ''
                         organizing_folder = sn(obj.name) + '/' if use_organizing_folder else '/'
                         folder_path = root_folder + organizing_folder + anims_folder
-                        filepath = folder_path + skeletal_mesh_prefix + sn(obj.name) + '_' + anim_name + format 
+                        filepath = folder_path + prefix + sn(obj.name) + '_' + anim_name + suffix + format 
                         
                         texture_root = root_folder + organizing_folder
                         

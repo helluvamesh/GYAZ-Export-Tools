@@ -263,6 +263,9 @@ class SCENE_PT_GYAZ_Export (Panel):
         
         col = lay.column (align=True)
         if asset_type == 'STATIC_MESHES':
+            col.prop (owner, "static_mesh_gather_from_collection")
+            if owner.static_mesh_gather_from_collection:
+                col.prop (owner, "static_mesh_gather_nested")
             col.prop (owner, "use_static_mesh_organizing_folder")
             col.prop (owner, "static_mesh_clear_transforms")
             col.prop (owner, "static_mesh_vcolors")
@@ -307,6 +310,9 @@ class SCENE_PT_GYAZ_Export (Panel):
             col.prop (owner, "use_scene_start_end")
 
         elif asset_type == 'RIGID_ANIMATIONS':
+            col.prop (owner, "rigid_anim_gather_from_collection")
+            if owner.rigid_anim_gather_from_collection:
+                col.prop (owner, "rigid_anim_gather_nested")
             col.prop (owner, "use_rigid_anim_organizing_folder")
             col.prop (owner, "rigid_anim_vcolors")
             col.prop (owner, "rigid_anim_shapes")
