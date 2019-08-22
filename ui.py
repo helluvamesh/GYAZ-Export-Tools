@@ -79,8 +79,10 @@ class SCENE_PT_GYAZ_Export_Bones (Panel):
             row.operator ('object.gyaz_export_remove_preset', text='', icon='REMOVE')
             
             col = lay.column (align=True)
-            col.label (text='Root:')
-            col.prop (owner, 'root_mode', text='')
+            row = col.row (align=True)
+            row.prop (owner, 'root_mode', text='')
+            if owner.root_mode == 'BONE':
+                row.prop_search (owner, 'root_bone_name', rig.data, "bones", icon='BONE_DATA', text='')
             col = lay.column (align=True)
             row = col.row (align=True)
             row.label (text='Extra Bones:')

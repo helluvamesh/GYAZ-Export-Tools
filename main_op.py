@@ -267,6 +267,9 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
         action_export_mode = owner.action_export_mode
         
         rigid_anim_cubes = True if owner.rigid_anim_cubes and not pack_objects else False
+        
+        # root bone name
+        root_bone_name = owner.root_bone_name
 
         def main (asset_type, image_info, image_set, ori_ao, ori_ao_name, ori_sel_objs, mesh_children, meshes_to_export, root_folder, pack_objects, action_export_mode, pack_name, lod_info, lods, export_collision, collision_info, export_sockets):
             
@@ -321,12 +324,12 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 extra_bones = scene.gyaz_export.extra_bones
                 extra_bone_list = [item.name for item in extra_bones]
                 bone_list = export_bone_list + extra_bone_list
-                if 'root' in bone_list:
-                    bone_list.remove ('root')
-                if 'root' in export_bone_list:
-                    export_bone_list.remove ('root')
-                if 'root' in extra_bone_list:
-                    extra_bone_list.remove ('root')
+                if root_bone_name in bone_list:
+                    bone_list.remove (root_bone_name)
+                if root_bone_name in export_bone_list:
+                    export_bone_list.remove (root_bone_name)
+                if root_bone_name in extra_bone_list:
+                    extra_bone_list.remove (root_bone_name)
             
             
             # define clear transforms
@@ -573,11 +576,12 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 final_rig_data = ori_ao.data.copy ()
                 
                 # create new armature object
-                final_rig = bpy.data.objects.new (name='root', object_data=final_rig_data)
+                final_rig = bpy.data.objects.new (name=root_bone_name, object_data=final_rig_data)
                 scene.collection.objects.link (final_rig)
                 make_active_only (final_rig)
-                final_rig.name = 'root'
-                final_rig.name = 'root'
+                # renaming just once may not be enough
+                final_rig.name = root_bone_name
+                final_rig.name = root_bone_name
                 
                 # remove drivers
                 if hasattr (final_rig_data, "animation_data") == True:
@@ -589,7 +593,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 bpy.ops.object.mode_set (mode='EDIT')
                 all_bones = set (bone.name for bone in final_rig_data.bones)
                 bones_to_remove = all_bones - set (export_bone_list)
-                bones_to_remove.add ('root')
+                bones_to_remove.add (root_bone_name)
                 for name in bones_to_remove:
                     ebones = final_rig_data.edit_bones
                     ebone = ebones.get (name)
@@ -687,8 +691,8 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 
                 # constraint root 
                 if root_mode == 'BONE':
-                    if ori_ao.data.bones.get ('root') is not None:
-                        subtarget = 'root' 
+                    if ori_ao.data.bones.get (root_bone_name) is not None:
+                        subtarget = root_bone_name 
                 else:
                     subtarget = ''           
                     
@@ -1947,11 +1951,11 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                             if ori_ao.type == 'ARMATURE':
                                 if len (mesh_children) > 0:
                                     if scene.gyaz_export.root_mode == 'BONE':    
-                                        if ori_ao.data.bones.get ('root') is not None:
+                                        if ori_ao.data.bones.get (root_bone_name) is not None:
                                             checks_plus_main ()
                                             
                                         else:
-                                            report (self, 'Armature has no "root" bone. Set object as root.', 'WARNING')
+                                            report (self, 'Root bone, called "' + root_bone_name + '", not found. Set object as root.', 'WARNING')
                                             
                                     else:
                                         checks_plus_main ()

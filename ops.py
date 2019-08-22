@@ -26,6 +26,10 @@ from bpy.props import *
 from mathutils import Vector
 
 
+def report (self, item, error_or_info):
+    self.report({error_or_info}, item)
+
+
 class Op_GYAZ_Export_SelectFileInWindowsFileExplorer (bpy.types.Operator):
        
     bl_idname = "object.gyaz_export_select_file_in_explorer"  
@@ -115,6 +119,7 @@ class Op_GYAZ_Export_SavePreset (bpy.types.Operator):
             setattr (preset, 'preset_name', preset_name)
             
             setattr (preset, 'root_mode', scene.gyaz_export.root_mode)
+            setattr (preset, 'root_bone_name', scene.gyaz_export.root_bone_name)
             setattr (preset, 'export_all_bones', scene.gyaz_export.export_all_bones)
             setattr (preset, 'constraint_extra_bones', scene.gyaz_export.constraint_extra_bones)
             setattr (preset, 'rename_vert_groups_to_extra_bones', scene.gyaz_export.rename_vert_groups_to_extra_bones)
@@ -157,6 +162,7 @@ class Op_GYAZ_Export_RemovePreset (bpy.types.Operator):
                     scene.gyaz_export.property_unset ("export_bones")
                     scene.gyaz_export.property_unset ("export_all_bones")
                     scene.gyaz_export.property_unset ("root_mode")
+                    scene.gyaz_export.property_unset ("root_bone_name")
                     scene.gyaz_export.property_unset ("constraint_extra_bones")
                     scene.gyaz_export.property_unset ("rename_vert_groups_to_extra_bones")
         

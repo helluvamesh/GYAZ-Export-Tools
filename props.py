@@ -51,7 +51,6 @@ class PG_GYAZ_export_ExportActions(PropertyGroup):
     name: StringProperty (description='Name of action to import', default='')
     
 
-# pointer property 
 class PG_GYAZ_ExportProps (PropertyGroup):
     
     def load_active_preset (self, context):
@@ -86,6 +85,7 @@ class PG_GYAZ_ExportProps (PropertyGroup):
                 scene_item.name = preset_item.name
             
             setattr (scene.gyaz_export, 'root_mode', preset.root_mode)
+            setattr (scene.gyaz_export, 'root_bone_name', preset.root_bone_name)
             setattr (scene.gyaz_export, 'export_all_bones', preset.export_all_bones)
             setattr (scene.gyaz_export, 'constraint_extra_bones', preset.constraint_extra_bones)
             setattr (scene.gyaz_export, 'rename_vert_groups_to_extra_bones', preset.rename_vert_groups_to_extra_bones)
@@ -96,7 +96,14 @@ class PG_GYAZ_ExportProps (PropertyGroup):
          
     active_preset: EnumProperty (name = 'Active Preset', items = get_preset_names, default = None, update=load_active_preset)    
     
-    root_mode: EnumProperty (name='Root', items=(('BONE', 'Bone: root', ''), ('OBJECT', 'Object', '')), default='OBJECT', description='Root Mode. Bone: top of hierarchy is the bone called "root", Object: top of hierarchy is the object (renamed as "root") and the root bone, if found, is removed.')
+    root_mode: EnumProperty (name='Root', 
+                             items=(('BONE', 'Root: Bone', ''), 
+                                    ('OBJECT', 'Root: Object', ''))
+                                    , 
+                             default='OBJECT', 
+                             description='Root Mode. Bone: top of hierarchy is the specified bone,' \
+                                       + 'Object: top of hierarchy is the object (renamed as "root") and the root bone, if found, is removed.'
+                             )
     
     extra_bones: CollectionProperty (type=PG_GYAZ_Export_ExtraBoneItem)
     
@@ -138,6 +145,8 @@ class PG_GYAZ_ExportProps (PropertyGroup):
             ('PATH', 'PATH', '')
             ),
         default='PATH', description='Relative: export next to the blend file, Path: select a destination')
+        
+    root_bone_name: StringProperty(name='Root Bone Name', default='root')
     
     def absolute_path__export_folder (self, context):
         scene = bpy.context.scene

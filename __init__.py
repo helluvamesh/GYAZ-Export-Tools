@@ -19,7 +19,7 @@
 bl_info = {   
  "name": "GYAZ Export Tools",   
  "author": "Andras Gyalog",
- "version": (2, 80, 11),
+ "version": (2, 80, 12),
  "blender": (2, 80, 0),   
  "location": "View3d > Toolshelf > Export FBX",   
  "description": "Extension of Blender's FBX Exporter for exporting static meshes, skeletal meshes and animations",
@@ -51,6 +51,7 @@ bpy.utils.register_class (GYAZ_Export_Preset_ExportBoneItem)
 class GYAZ_Export_BonePresetItem (PropertyGroup):
     preset_name: StringProperty (default='')
     root_mode: EnumProperty (items=(('BONE', 'Bone: root', ''), ('OBJECT', 'Object', '')), default='BONE')
+    root_bone_name: StringProperty (default='root')
     extra_bones: CollectionProperty(type=GYAZ_Export_Preset_ExtraBoneItem)
     export_bones: CollectionProperty(type=GYAZ_Export_Preset_ExportBoneItem)
     export_all_bones: BoolProperty (default=True)      
