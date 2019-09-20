@@ -19,7 +19,7 @@
 bl_info = {   
  "name": "GYAZ Export Tools",   
  "author": "Andras Gyalog",
- "version": (2, 80, 12),
+ "version": (2, 80, 13),
  "blender": (2, 80, 0),   
  "location": "View3d > Toolshelf > Export FBX",   
  "description": "Extension of Blender's FBX Exporter for exporting static meshes, skeletal meshes and animations",
@@ -122,6 +122,27 @@ class GYAZ_Export_Preferences (AddonPreferences):
     anim_folder_name: StringProperty (name='Animations Folder', default='Animations')
     mesh_folder_name: StringProperty (name='Meshes Folder', default='')
     
+    primary_bone_axis: EnumProperty (name='Primary Bone Axis',
+        items=(
+            ('X', 'X', ''),
+            ('Y', 'Y', ''),
+            ('Z', 'Z', ''),
+            ('-X', '-X', ''),
+            ('-Y', '-Y', ''),
+            ('-Z', '-Z', '')),
+        default='-Y')
+        
+    secondary_bone_axis: EnumProperty (name='Secondary Bone Axis',
+        items=(
+            ('X', 'X', ''),
+            ('Y', 'Y', ''),
+            ('Z', 'Z', ''),
+            ('-X', '-X', ''),
+            ('-Y', '-Y', ''),
+            ('-Z', '-Z', '')),
+        default='X')
+    
+    
     def draw (self, context):
         lay = self.layout 
         lay.prop (self, "use_prefixes")
@@ -152,6 +173,8 @@ class GYAZ_Export_Preferences (AddonPreferences):
         lay.label (text='')
         lay.prop (self, "add_end_bones")
         lay.prop (self, "skeletal_mesh_limit_bone_influences")
+        lay.prop (self, "primary_bone_axis")
+        lay.prop (self, "secondary_bone_axis")
         
         lay.label (text='')      
         lay.label (text='')      

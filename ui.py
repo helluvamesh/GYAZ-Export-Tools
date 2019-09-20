@@ -228,7 +228,10 @@ class SCENE_PT_GYAZ_Export (Panel):
             col.prop (owner, "check_for_second_uv_map")
             col.prop (owner, "detect_mirrored_uvs")
             col.prop (owner, "allow_quads")
-            col.prop (owner, "mesh_smoothing")
+            col.prop (owner, "mesh_smoothing", text="")
+            col = lay.column (align=True)
+            col.prop (owner, "primary_bone_axis", text="")
+            col.prop (owner, "secondary_bone_axis", text="")
             
             if owner.show_debug_props:
                 col = lay.column ()

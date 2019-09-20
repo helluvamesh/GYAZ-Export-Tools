@@ -249,9 +249,9 @@ class PG_GYAZ_ExportProps (PropertyGroup):
     
     mesh_smoothing: EnumProperty (name='Smoothing',
         items=(
-            ('OFF', 'Normals Only', ''),
-            ('FACE', 'Face', ''),
-            ('EDGE', 'Edge', '')
+            ('OFF', 'Smoothing: Normals Only', ''),
+            ('FACE', 'Smoothing: Face', ''),
+            ('EDGE', 'Smoothing: Edge', '')
             ),
         default=prefs.mesh_smoothing,
         description='Mesh smoothing data')
@@ -270,6 +270,26 @@ class PG_GYAZ_ExportProps (PropertyGroup):
     rigid_anim_shapes: BoolProperty (name='Shape Keys', default=True)
     
     path_to_last_export: StringProperty (name='path to last export', default='')
+    
+    primary_bone_axis: EnumProperty (name='Primary Bone Axis',
+        items=(
+            ('X', 'Primary Bone Axis: X', ''),
+            ('Y', 'Primary Bone Axis: Y', ''),
+            ('Z', 'Primary Bone Axis: Z', ''),
+            ('-X', 'Primary Bone Axis: -X', ''),
+            ('-Y', 'Primary Bone Axis: -Y', ''),
+            ('-Z', 'Primary Bone Axis: -Z', '')),
+        default=prefs.primary_bone_axis)
+        
+    secondary_bone_axis: EnumProperty (name='Secondary Bone Axis',
+        items=(
+            ('X', 'Secondary Bone Axis: X', ''),
+            ('Y', 'Secondary Bone Axis: Y', ''),
+            ('Z', 'Secondary Bone Axis: Z', ''),
+            ('-X', 'Secondary Bone Axis: -X', ''),
+            ('-Y', 'Secondary Bone Axis: -Y', ''),
+            ('-Z', 'Secondary Bone Axis: -Z', '')),
+        default=prefs.secondary_bone_axis)
     
     # debug
     show_debug_props: BoolProperty (name='Developer', default=False, description="Show properties for debugging")

@@ -896,8 +896,8 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             # ARMATURES
             use_armature_deform_only = False
             add_leaf_bones = owner.add_end_bones
-            primary_bone_axis = '-Y'
-            secondary_bone_axis = 'X'
+            primary_bone_axis = owner.primary_bone_axis
+            secondary_bone_axis = owner.secondary_bone_axis
             armature_nodetype = 'NULL'
             # ANIMATION
             bake_anim = False
