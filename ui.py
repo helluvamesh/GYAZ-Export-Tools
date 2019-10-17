@@ -182,6 +182,17 @@ class SCENE_PT_GYAZ_Export_Animation (Panel):
                 owner, "actions",  # pointer to the CollectionProperty
                 owner, "actions_active_index",  # pointer to the active identifier
                 rows = 1, maxrows = 1)
+		
+        obj = context.active_object
+        if obj is not None:
+            if obj.animation_data is not None:
+                action = obj.animation_data.action
+                if action is not None:
+                    col = lay.column(align=True)
+                    col.label(text="Active Action:")
+                    row = col.row(align=True)
+                    row.prop(action.gyaz_export, "start")
+                    row.prop(action.gyaz_export, "end")
                 
     # when the buttons should show up    
     @classmethod
@@ -500,12 +511,7 @@ class DOPE_PT_GYAZ_ActionProps (Panel):
     def draw (self, context):
         lay = self.layout
         row = lay.row(align=True)
-        obj = context.object
-        if obj.animation_data is not None:
-            action = obj.animation_data.action
-            if action is not None:
-                row.prop(action.gyaz_export, "start")
-                row.prop(action.gyaz_export, "end")
+        
 
     # when the buttons should show up    
     @classmethod
@@ -522,7 +528,6 @@ def register():
     bpy.utils.register_class (SCENE_PT_GYAZ_Export)
     bpy.utils.register_class (SCENE_PT_GYAZ_Export_Filter)
     bpy.utils.register_class (SCENE_PT_GYAZ_Export_Extras)
-    bpy.utils.register_class (DOPE_PT_GYAZ_ActionProps)
     
     
 def unregister():
@@ -534,7 +539,6 @@ def unregister():
     bpy.utils.unregister_class (SCENE_PT_GYAZ_Export)
     bpy.utils.unregister_class (SCENE_PT_GYAZ_Export_Filter)
     bpy.utils.unregister_class (SCENE_PT_GYAZ_Export_Extras)
-    bpy.utils.unregister_class (DOPE_PT_GYAZ_ActionProps)
     
     
 if __name__ == "__main__":   
