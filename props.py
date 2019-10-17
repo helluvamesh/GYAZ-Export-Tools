@@ -22,7 +22,7 @@
 
 
 import bpy, os
-from bpy.types import PropertyGroup, UIList, Scene, Object, Mesh
+from bpy.types import PropertyGroup, UIList, Scene, Object, Mesh, Action
 from bpy.props import *
 
 
@@ -44,7 +44,6 @@ class PG_GYAZ_Export_ExportBoneItem (PropertyGroup):
     
 
 prefs = bpy.context.preferences.addons[__package__].preferences
-
 
 # actions to export
 class PG_GYAZ_export_ExportActions(PropertyGroup):
@@ -96,9 +95,9 @@ class PG_GYAZ_ExportProps (PropertyGroup):
          
     active_preset: EnumProperty (name = 'Active Preset', items = get_preset_names, default = None, update=load_active_preset)    
     
-    root_mode: EnumProperty (name='Root', 
-                             items=(('BONE', 'Root: Bone', ''), 
-                                    ('OBJECT', 'Root: Object', ''))
+    root_mode: EnumProperty (name='Root Mode', 
+                             items=(('BONE', 'Bone', ''), 
+                                    ('OBJECT', 'Object', ''))
                                     , 
                              default='OBJECT', 
                              description='Root Mode. Bone: top of hierarchy is the specified bone,' \
@@ -127,18 +126,24 @@ class PG_GYAZ_ExportProps (PropertyGroup):
     actions: CollectionProperty (type=PG_GYAZ_export_ExportActions)
     actions_active_index: IntProperty (default=0)
 
-    skeletal_mesh_limit_bone_influences: EnumProperty (name='Max Bone Inflences', description="Limit bone influences by vertex",
+    skeletal_mesh_limit_bone_influences: EnumProperty (name='Bone Weights', description="Limit bone influences by vertex",
         items=(
-            ('1', '1 Bone Weight / Vertex', ''),
-            ('2', '2 Bone Weights / Vertex', ''),
-            ('4', '4 Bone Weights / Vertex', ''),
-            ('8', '8 Bone Weights / Vertex', ''),
-            ('unlimited', 'Unlimited Bone Weights / Vertex', '')
+            ('1', '1', ''),
+            ('2', '2', ''),
+            ('4', '4', ''),
+            ('8', '8', ''),
+            ('unlimited', 'unlimited', '')
             ),
         default=prefs.skeletal_mesh_limit_bone_influences)
     
-    use_scene_start_end: BoolProperty (name='Use Scene Start End', default=False, description="If False, frame range will be set according to first and last keyframes of the action")
-
+    frame_range_mode: EnumProperty (name='Frame Range', 
+        items=(
+            ('AUTO', 'Auto', ''),
+            ('SCENE_START_END', 'Scene Start End', ''),
+            ('ACTION_START_END', 'Action Start End', '')
+            ),
+        default='AUTO')
+    
     export_folder_mode: EnumProperty (
         items=(
             ('RELATIVE_FOLDER', 'RELATIVE', ''),
@@ -212,8 +217,8 @@ class PG_GYAZ_ExportProps (PropertyGroup):
     texture_format_mode: EnumProperty(
         name='Texture Format',
         items=(
-            ('KEEP_IF_ANY', "Keep Format", ""),
-            ('ALWAYS_OVERRIDE', "Override Format", "")
+            ('KEEP_IF_ANY', "Keep", ""),
+            ('ALWAYS_OVERRIDE', "Override", "")
             ),
         default=prefs.texture_format_mode)
         
@@ -249,9 +254,9 @@ class PG_GYAZ_ExportProps (PropertyGroup):
     
     mesh_smoothing: EnumProperty (name='Smoothing',
         items=(
-            ('OFF', 'Smoothing: Normals Only', ''),
-            ('FACE', 'Smoothing: Face', ''),
-            ('EDGE', 'Smoothing: Edge', '')
+            ('OFF', 'Normals Only', ''),
+            ('FACE', 'Face', ''),
+            ('EDGE', 'Edge', '')
             ),
         default=prefs.mesh_smoothing,
         description='Mesh smoothing data')
@@ -271,7 +276,7 @@ class PG_GYAZ_ExportProps (PropertyGroup):
     
     path_to_last_export: StringProperty (name='path to last export', default='')
     
-    primary_bone_axis: EnumProperty (name='Primary Bone Axis',
+    primary_bone_axis: EnumProperty (name='',
         items=(
             ('X', 'Primary Bone Axis: X', ''),
             ('Y', 'Primary Bone Axis: Y', ''),
@@ -281,7 +286,7 @@ class PG_GYAZ_ExportProps (PropertyGroup):
             ('-Z', 'Primary Bone Axis: -Z', '')),
         default=prefs.primary_bone_axis)
         
-    secondary_bone_axis: EnumProperty (name='Secondary Bone Axis',
+    secondary_bone_axis: EnumProperty (name='',
         items=(
             ('X', 'Secondary Bone Axis: X', ''),
             ('Y', 'Secondary Bone Axis: Y', ''),
@@ -297,14 +302,21 @@ class PG_GYAZ_ExportProps (PropertyGroup):
     dont_reload_scene: BoolProperty (name="Don't Reload Scene", default=False, description="Debugging, whether not to reload the scene saved before the export")
 
 
+class PG_GYAZ_export_Action(PropertyGroup):
+    start: IntProperty(name="Start", min=0, default=1)
+    end: IntProperty(name="End", min=0, default=250)
+
+
 def register():
     bpy.utils.register_class (PG_GYAZ_Export_ExtraBoneItem)
     bpy.utils.register_class (PG_GYAZ_Export_ExportBoneItem)
     bpy.utils.register_class (PG_GYAZ_export_ExportActions)
     bpy.utils.register_class (PG_GYAZ_ExportProps)
     bpy.utils.register_class (PG_GYAZ_Export_ObjectProps)
+    bpy.utils.register_class (PG_GYAZ_export_Action)
     Scene.gyaz_export = PointerProperty (type=PG_GYAZ_ExportProps)
     Object.gyaz_export = PointerProperty (type=PG_GYAZ_Export_ObjectProps)
+    Action.gyaz_export = PointerProperty (type=PG_GYAZ_export_Action)
     
     
 def unregister():
@@ -313,8 +325,10 @@ def unregister():
     bpy.utils.unregister_class (PG_GYAZ_export_ExportActions)
     bpy.utils.unregister_class (PG_GYAZ_ExportProps)
     bpy.utils.unregister_class (PG_GYAZ_Export_ObjectProps)
+    bpy.utils.unregister_class (PG_GYAZ_export_Action)
     del Scene.gyaz_export
     del Object.gyaz_export
+    del Action.gyaz_export
     
     
 if __name__ == "__main__":   

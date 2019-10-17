@@ -87,10 +87,7 @@ untransformed_matrix = Matrix (([1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0,
                 
 def get_active_action (obj):
     if obj.animation_data is not None:
-        action = obj.animation_data.action
-    else:
-        action = None
-    return action
+        return obj.animation_data.action
 
 
 def clear_transformation (object):
@@ -1017,8 +1014,8 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                             
                             if image_format_mode == 'ALWAYS_OVERRIDE':
                                 final_image_format = override_format
-                                
-                            elif image_format_mode == 'KEEP_IF_ANY':
+                            else:
+                                """'KEEP_IF_ANY'"""  
                                 final_image_format = image.file_format
                             
                             new_image = image.copy ()
@@ -1171,7 +1168,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             
             if asset_type == 'ANIMATIONS' or asset_type == 'RIGID_ANIMATIONS':
             
-                use_scene_start_end = scene.gyaz_export.use_scene_start_end            
+                frame_range_mode = scene.gyaz_export.frame_range_mode 
                 actions_names = scene.gyaz_export.actions
                 
                 def set_active_action (action):
@@ -1212,6 +1209,12 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                         frame_start, frame_end = action.frame_range
                         scene.frame_start = frame_start
                         scene.frame_end = frame_end
+                        
+                def adjust_scene_to_action_start_end (object):
+                    action = get_active_action (object)
+                    if action is not None:                            
+                        scene.frame_start = action.gyaz_export.start
+                        scene.frame_end = action.gyaz_export.end
                 
             
             ########################################################
@@ -1405,8 +1408,11 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     os.makedirs (folder_path, exist_ok=True)
                     
                     set_active_action (action)
-                    if not use_scene_start_end:
+                    
+                    if frame_range_mode == 'AUTO':
                         adjust_scene_to_action_length (object = ori_ao)
+                    elif frame_range_mode == 'ACTION_START_END':
+                        adjust_scene_to_action_start_end (object = ori_ao)
                         
                     export_objects (filepath, objects = [final_rig] + mesh_children)
                     export_info = filepath
@@ -1458,8 +1464,10 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                         
                         texture_root = root_folder + organizing_folder
                         
-                        if not use_scene_start_end:
+                        if frame_range_mode == 'AUTO':
                             adjust_scene_to_action_length (object = obj)
+                        elif frame_range_mode == 'ACTION_START_END':
+                            adjust_scene_to_action_start_end (object = obj)
                         
                         os.makedirs(folder_path, exist_ok=True)
                         

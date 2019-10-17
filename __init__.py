@@ -19,7 +19,7 @@
 bl_info = {   
  "name": "GYAZ Export Tools",   
  "author": "Andras Gyalog",
- "version": (2, 80, 13),
+ "version": (2, 80, 14),
  "blender": (2, 80, 0),   
  "location": "View3d > Toolshelf > Export FBX",   
  "description": "Extension of Blender's FBX Exporter for exporting static meshes, skeletal meshes and animations",
@@ -110,11 +110,11 @@ class GYAZ_Export_Preferences (AddonPreferences):
     
     skeletal_mesh_limit_bone_influences: EnumProperty (name='Max Bone Inflences', description="Limit bone influences by vertex",
         items=(
-            ('1', '1 Bone Weight / Vertex', ''),
-            ('2', '2 Bone Weights / Vertex', ''),
-            ('4', '4 Bone Weights / Vertex', ''),
-            ('8', '8 Bone Weights / Vertex', ''),
-            ('unlimited', 'Unlimited Bone Weights / Vertex', '')
+            ('1', '1', ''),
+            ('2', '2', ''),
+            ('4', '4', ''),
+            ('8', '8', ''),
+            ('unlimited', 'unlimited', '')
             ),
         default='4')
     
@@ -164,7 +164,7 @@ class GYAZ_Export_Preferences (AddonPreferences):
         
         lay.prop (self, "texture_format_mode")
         lay.prop (self, "texture_format_override")
-        lay.prop (self, "texture_compression", slider=True)
+        lay.prop (self, "texture_compression")
         lay.label (text='')
         lay.prop (self, "mesh_smoothing")
         lay.prop (self, "check_for_second_uv_map")

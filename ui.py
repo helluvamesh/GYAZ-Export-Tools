@@ -79,10 +79,11 @@ class SCENE_PT_GYAZ_Export_Bones (Panel):
             row.operator ('object.gyaz_export_remove_preset', text='', icon='REMOVE')
             
             col = lay.column (align=True)
-            row = col.row (align=True)
-            row.prop (owner, 'root_mode', text='')
+            col.use_property_split = True
+            col.use_property_decorate = False
+            col.prop (owner, 'root_mode')
             if owner.root_mode == 'BONE':
-                row.prop_search (owner, 'root_bone_name', rig.data, "bones", icon='BONE_DATA', text='')
+                col.prop_search (owner, 'root_bone_name', rig.data, "bones", icon='BONE_DATA', text='Bone')
             col = lay.column (align=True)
             row = col.row (align=True)
             row.label (text='Extra Bones:')
@@ -211,44 +212,42 @@ class SCENE_PT_GYAZ_Export (Panel):
         scene = bpy.context.scene
         owner = scene.gyaz_export        
         lay = self.layout
+        lay.use_property_split = True
+        lay.use_property_decorate = False
         
-        if owner.show_options:
-            row = lay.row ()
-            row.label (text='Options:')
+        row = lay.row (align=True)
+        row.prop (owner, "show_options", text='', icon='TRIA_DOWN' if owner.show_options else 'TRIA_RIGHT', emboss=False)
+        row.label (text='Options:')
             
-            icon = 'SOLO_OFF' if not owner.show_debug_props else 'SOLO_ON'
-            row.prop (owner, "show_debug_props", text='', icon=icon, emboss=False)
+        if owner.show_options:
+            row.prop (owner, "show_debug_props", text='', icon='SOLO_OFF' if not owner.show_debug_props else 'SOLO_ON', emboss=False)
             col = lay.column (align=True)
-            col.prop (owner, "texture_format_mode", text='Texture')
+            col.prop (owner, "texture_format_mode")
             col.prop (owner, "texture_format_override", text='Override')
-            lay.prop (owner, "texture_compression", slider=True)
+            col.prop (owner, "texture_compression", text='Compression')
             col = lay.column (align=True)    
             col.prop (owner, "use_prefixes")
-            col.prop (owner, "add_end_bones")
             col.prop (owner, "check_for_second_uv_map")
             col.prop (owner, "detect_mirrored_uvs")
             col.prop (owner, "allow_quads")
-            col.prop (owner, "mesh_smoothing", text="")
+            col.prop (owner, "add_end_bones")
+            col.prop (owner, "mesh_smoothing")
             col = lay.column (align=True)
-            col.prop (owner, "primary_bone_axis", text="")
-            col.prop (owner, "secondary_bone_axis", text="")
+            col.prop (owner, "primary_bone_axis")
+            col.prop (owner, "secondary_bone_axis")
             
             if owner.show_debug_props:
                 col = lay.column ()
                 col = lay.column (align=True)
                 col.label (text='Debug:')
                 col.prop (owner, "dont_reload_scene")
-                
-            lay.prop (owner, "show_options", text='', icon='TRIA_UP', emboss=False)
-                
-        else:
-            lay.prop (owner, "show_options", text='', icon='TRIA_DOWN', emboss=False)
         
         obj = bpy.context.active_object
         if obj is not None:
             col = lay.column (align=True)
             col.label (text='Destination:')
             row = col.row (align=True)
+            row.use_property_split = False
             row.prop (owner, 'export_folder_mode', expand=True)
             relative = owner.export_folder_mode == 'RELATIVE_FOLDER'
             path = '//' + owner.relative_folder_name if relative else owner.export_folder
@@ -259,6 +258,7 @@ class SCENE_PT_GYAZ_Export (Panel):
                 lay.prop (owner, "export_folder", text="")   
             lay.label (text='Asset Type:')
             col = lay.column (align=True)
+            col.use_property_split = False
             if obj.type == 'ARMATURE':
                 asset_type = owner.skeletal_asset_type
                 col.prop (owner, 'skeletal_asset_type', expand=True)   
@@ -289,11 +289,11 @@ class SCENE_PT_GYAZ_Export (Panel):
                 row.prop (owner, "static_mesh_pack_name")
             
         elif asset_type == 'SKELETAL_MESHES':
+            col.prop (owner, "skeletal_mesh_limit_bone_influences")
             col.prop (owner, "use_skeletal_organizing_folder")          
             col.prop (owner, "skeletal_clear_transforms")
             col.prop (owner, "skeletal_mesh_vcolors")
             col.prop (owner, "skeletal_shapes")
-            col.prop (owner, "skeletal_mesh_limit_bone_influences", text='')
             col.prop (owner, "export_textures")
             if owner.export_textures:
                 col.prop (owner, "export_only_textures")
@@ -312,7 +312,7 @@ class SCENE_PT_GYAZ_Export (Panel):
                 row.prop (owner, 'anim_object_name_override')
             col.prop (owner, "skeletal_clear_transforms")
             col.prop (owner, "skeletal_shapes")
-            col.prop (owner, "use_scene_start_end")
+            col.prop (owner, "frame_range_mode")
 
         elif asset_type == 'RIGID_ANIMATIONS':
             col.prop (owner, "rigid_anim_gather_from_collection")
@@ -330,7 +330,7 @@ class SCENE_PT_GYAZ_Export (Panel):
             row.prop (owner, "rigid_anim_cubes")
             row = col.row ()
             row.enabled = rule1
-            row.prop (owner, "use_scene_start_end")
+            row.prop (owner, "frame_range_mode")
             col.prop (owner, "rigid_anim_pack_objects")
             if owner.rigid_anim_pack_objects:
                 row = col.row (align=True)
@@ -442,7 +442,7 @@ class SCENE_PT_GYAZ_Export_Extras (Panel):
     bl_region_type = 'WINDOW'
     bl_context = "scene"
     COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_EEVEE', 'BLENDER_WORKBENCH'}
-    bl_label = 'Extras'
+    bl_label = 'Export Extras'
     
     # add ui elements here
     def draw (self, context):      
@@ -451,8 +451,9 @@ class SCENE_PT_GYAZ_Export_Extras (Panel):
         
         owner = bpy.context.scene.gyaz_export_shapes
         show = owner.show_props
-        icon = 'TRIA_UP' if show else 'TRIA_DOWN'
-        lay.prop (owner, 'show_props', toggle=True, icon=icon)
+        row = lay.row(align=True)
+        row.prop (owner, 'show_props', icon='TRIA_DOWN' if show else 'TRIA_RIGHT', text="", emboss=False)
+        row.label (text='Shape Keys in UVs')
         if show:
             lay.prop (owner, 'encode_normals')
             col = lay.column (align=True)
@@ -490,6 +491,28 @@ class SCENE_PT_GYAZ_Export_Extras (Panel):
             row.operator ('object.gyaz_export_select_file_in_explorer', text='', icon='VIEWZOOM').path=bpy.context.scene.gyaz_export.path_to_last_export
 
 
+class DOPE_PT_GYAZ_ActionProps (Panel):
+    bl_space_type = 'DOPESHEET_EDITOR'
+    bl_region_type = 'UI'
+    bl_label = 'Export'
+    
+    # add ui elements here
+    def draw (self, context):
+        lay = self.layout
+        row = lay.row(align=True)
+        obj = context.object
+        if obj.animation_data is not None:
+            action = obj.animation_data.action
+            if action is not None:
+                row.prop(action.gyaz_export, "start")
+                row.prop(action.gyaz_export, "end")
+
+    # when the buttons should show up    
+    @classmethod
+    def poll(cls, context):
+        return context.object is not None
+
+
 def register():
     bpy.utils.register_class (UI_UL_GYAZ_ExtraBones)
     bpy.utils.register_class (UI_UL_GYAZ_ExportBones)
@@ -499,6 +522,7 @@ def register():
     bpy.utils.register_class (SCENE_PT_GYAZ_Export)
     bpy.utils.register_class (SCENE_PT_GYAZ_Export_Filter)
     bpy.utils.register_class (SCENE_PT_GYAZ_Export_Extras)
+    bpy.utils.register_class (DOPE_PT_GYAZ_ActionProps)
     
     
 def unregister():
@@ -510,6 +534,7 @@ def unregister():
     bpy.utils.unregister_class (SCENE_PT_GYAZ_Export)
     bpy.utils.unregister_class (SCENE_PT_GYAZ_Export_Filter)
     bpy.utils.unregister_class (SCENE_PT_GYAZ_Export_Extras)
+    bpy.utils.unregister_class (DOPE_PT_GYAZ_ActionProps)
     
     
 if __name__ == "__main__":   
