@@ -502,23 +502,6 @@ class SCENE_PT_GYAZ_Export_Extras (Panel):
             row.operator ('object.gyaz_export_select_file_in_explorer', text='', icon='VIEWZOOM').path=bpy.context.scene.gyaz_export.path_to_last_export
 
 
-class DOPE_PT_GYAZ_ActionProps (Panel):
-    bl_space_type = 'DOPESHEET_EDITOR'
-    bl_region_type = 'UI'
-    bl_label = 'Export'
-    
-    # add ui elements here
-    def draw (self, context):
-        lay = self.layout
-        row = lay.row(align=True)
-        
-
-    # when the buttons should show up    
-    @classmethod
-    def poll(cls, context):
-        return context.object is not None
-
-
 def register():
     bpy.utils.register_class (UI_UL_GYAZ_ExtraBones)
     bpy.utils.register_class (UI_UL_GYAZ_ExportBones)
