@@ -309,10 +309,6 @@ class SCENE_PT_GYAZ_Export (Panel):
             if owner.export_textures:
                 col.prop (owner, "export_only_textures")
             col.prop (owner, "skeletal_mesh_pack_objects")
-            if owner.skeletal_mesh_pack_objects:
-                row = col.row (align=True)
-                row.label (icon='BLANK1')
-                row.prop (owner, "skeletal_mesh_pack_name")
             
         elif asset_type == 'ANIMATIONS':
             col.prop (owner, "use_skeletal_organizing_folder")

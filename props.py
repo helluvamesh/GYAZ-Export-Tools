@@ -169,7 +169,6 @@ class PG_GYAZ_ExportProps (PropertyGroup):
     anim_object_name_override: StringProperty (name='', default='')
     
     static_mesh_pack_name: StringProperty (default='', name='', description="Pack name")
-    skeletal_mesh_pack_name: StringProperty (default='', name='', description="Pack name")
     
     rigid_anim_pack_name: StringProperty (default='', name='', description="Pack's name")
     
@@ -198,7 +197,7 @@ class PG_GYAZ_ExportProps (PropertyGroup):
         default='SKELETAL_MESHES')
 
     static_mesh_pack_objects: BoolProperty (name='Pack Objects', default=False, description='Whether to pack all objects into one file or export them as separate files. If true, sockets will not be exported')
-    skeletal_mesh_pack_objects: BoolProperty (name='Pack Objects', default=False, description='Whether to pack all objects into one file or export them as separate files')
+    skeletal_mesh_pack_objects: BoolProperty (name='Pack Objects', default=False, description='Whether to pack all objects into one file (name of the armature) or export them as separate files (names of mesh children)')
     rigid_anim_pack_objects: BoolProperty (name='Pack Objects', default=False, description="Whether to pack all objects into one file or export them as separate files. If checked, 'Use Scene Start End' is forced, 'Export Cubes' is not an option")
         
     use_static_mesh_organizing_folder: BoolProperty (name='Organizing Folder', default=False, description="Export objects into separate folders with the object's name. If 'Pack Objects' is true, export objects into a folder with the pack's name")

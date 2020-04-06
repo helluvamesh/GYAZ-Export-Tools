@@ -273,7 +273,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             pack_name = owner.static_mesh_pack_name
         elif asset_type == 'SKELETAL_MESHES' or asset_type == 'ANIMATIONS':
             pack_objects = owner.skeletal_mesh_pack_objects
-            pack_name = owner.skeletal_mesh_pack_name
+            pack_name = ori_ao_name
         elif asset_type == 'RIGID_ANIMATIONS':
             pack_objects = owner.rigid_anim_pack_objects
             pack_name = owner.rigid_anim_pack_name
