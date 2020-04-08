@@ -36,12 +36,7 @@ def popup (lines, icon, title):
     bpy.context.window_manager.popup_menu(draw, title=title, icon=icon)
     
 def list_to_visual_list (list):
-    line = ''
-    for index, item in enumerate(list):
-        if index > 0:
-            line += ', '
-        line += str(item)
-    return line
+    return ", ".join(list)
 
 
 def report (self, item, error_or_info):
@@ -277,6 +272,22 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
         elif asset_type == 'RIGID_ANIMATIONS':
             pack_objects = owner.rigid_anim_pack_objects
             pack_name = owner.rigid_anim_pack_name
+            
+        if asset_type == 'STATIC_MESHES':
+            export_vert_colors = owner.static_mesh_vcolors
+        elif asset_type == 'SKELETAL_MESHES':
+            export_vert_colors = owner.skeletal_mesh_vcolors
+        elif asset_type == 'RIGID_ANIMATIONS':
+            export_vert_colors = owner.rigid_anim_vcolors
+        else:
+            export_vert_colors = False
+            
+        if asset_type == 'SKELETAL_MESHES' or asset_type == 'ANIMATIONS':
+            export_shape_keys = owner.skeletal_shapes
+        elif asset_type == 'RIGID_ANIMATIONS':
+            export_shape_keys = owner.rigid_anim_shapes
+        else:
+            export_shape_keys = False
             
         action_export_mode = owner.action_export_mode
         
@@ -796,22 +807,6 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             ###########################################################
             # REMOVE VERT COLORS, SHAPE KEYS, UVMAPS AND MERGE MATERIALS 
             ###########################################################
-            
-            if asset_type == 'STATIC_MESHES':
-                export_vert_colors = owner.static_mesh_vcolors
-            elif asset_type == 'SKELETAL_MESHES':
-                export_vert_colors = owner.skeletal_mesh_vcolors
-            elif asset_type == 'RIGID_ANIMATIONS':
-                export_vert_colors = owner.rigid_anim_vcolors
-            else:
-                export_vert_colors = False
-                
-            if asset_type == 'SKELETAL_MESHES' or asset_type == 'ANIMATIONS':
-                export_shape_keys = owner.skeletal_shapes
-            elif asset_type == 'RIGID_ANIMATIONS':
-                export_shape_keys = owner.rigid_anim_shapes
-            else:
-                export_shape_keys = False
             
             # render meshes
             
@@ -1544,11 +1539,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
         ###############################################################
         
         def content_checks (scene_objects, meshes_to_export):
-            
-            good_to_go = False
-            report_cache = []
                                     
-            #
             no_material_objects = []  
             no_uv_map_objects = []
             no_second_uv_map_objects = []
@@ -1556,12 +1547,19 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             ungrouped_vert_objects = []
             mirrored_uv_objects = []
             missing_textures = []
+            missing_bones = []
+            cant_create_extra_bones = []
+            poly_warning = ""
+            multiple_or_no_armature_mods = []
+            shapes_and_mods = []
             
             image_info = {}
             
-            missing_bones = []
-            cant_create_extra_bones = []
-            poly_warning = ''
+            def everything_fine():
+                return len(no_material_objects)==0 and len(no_uv_map_objects)==0 and len(no_second_uv_map_objects)==0 and \
+                    len(bad_poly_objects)==0 and len(ungrouped_vert_objects)==0 and len(mirrored_uv_objects)==0 and \
+                    len(missing_textures)==0 and len(missing_bones)==0 and len(cant_create_extra_bones)==0 and \
+                    poly_warning == "" and len(multiple_or_no_armature_mods)==0 and len(shapes_and_mods)==0
             
             # mesh checks
             for obj in meshes_to_export:
@@ -1642,6 +1640,24 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                                 mirrored_uv_objects.append (obj.name + ' (' + list_to_visual_list(mirrored_indices) + ')')
                                     
                             bm.free ()
+                            
+                    if asset_type == "SKELETAL_MESHES" or asset_type == "ANIMATIONS":
+                        count = 0
+                        for m in obj.modifiers:
+                            if m.type == "ARMATURE":
+                                count += 1
+                        if count != 1:
+                            multiple_or_no_armature_mods.append(obj.name)
+                            
+                    if export_shape_keys:
+                        if obj.data.shape_keys is not None:
+                            if len(obj.data.shape_keys.key_blocks) > 0:
+                                count = 0
+                                for m in obj.modifiers:
+                                    if m.type != "ARMATURE":
+                                        count += 1
+                                if count > 0:
+                                    shapes_and_mods.append(obj.name)
                         
                     # textures
                     # get list of texture images
@@ -1693,36 +1709,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                         if item.name in export_bone_names:
                             cant_create_extra_bones.append (index)
             
-            # everythings ok?            
-            if asset_type == 'STATIC_MESHES': 
-                if len(no_material_objects)==0 and len(no_uv_map_objects)==0 and len(bad_poly_objects)==0 and len(missing_textures)==0 and len(mirrored_uv_objects)==0:
-                    if len (no_second_uv_map_objects) == 0:
-                        good_to_go = True
-                        
-                    else:
-                        if scene.gyaz_export.check_for_second_uv_map:
-                            if not scene.gyaz_export.ignore_missing_second_uv_map:
-                                good_to_go = False
-                                
-                            else:
-                                good_to_go = True
-                                
-                        else:
-                            good_to_go = True
-                
-                else:
-                    good_to_go = False
-            
-            else:
-                """ SKELETAL MESHES, RIGID ANIMATIONS"""
-                if len(no_material_objects)==0 and len(no_uv_map_objects)==0 and len(bad_poly_objects)==0 and len(missing_textures)== 0 and len(missing_bones)==0 and len(cant_create_extra_bones)==0 and len(ungrouped_vert_objects)==0 and len(mirrored_uv_objects)==0:
-                    good_to_go = True
-                    
-                else:
-                    good_to_go = False
-            
-            
-            # if not...        
+            good_to_go = everything_fine()      
             if not good_to_go:
                 
                 # popup with warnings
@@ -1736,6 +1723,8 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 vl7 = list_to_visual_list (missing_textures)
                 vl8 = list_to_visual_list (missing_bones)
                 vl9 = list_to_visual_list (cant_create_extra_bones)
+                vl10 = list_to_visual_list (multiple_or_no_armature_mods)
+                vl11 = list_to_visual_list (shapes_and_mods)
                 
                 l1 = 'No materials: ' + vl1
                 l2 = 'No uv maps: ' + vl2
@@ -1746,6 +1735,8 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 l7 = 'Missing/unsaved textures: ' + vl7
                 l8 = 'Missing bones: ' + vl8
                 l9 = "Can't create extra bones: " + vl9
+                l10 = "Multiple or no armature modifiers: " + vl10
+                l11 = "Shape keys with modifers: " + vl11
                 
                 lines = []
                 if len (no_material_objects) > 0:
@@ -1778,10 +1769,18 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     
                 if asset_type == 'SKELETAL_MESHES' or asset_type == 'ANIMATIONS':
                     if len (cant_create_extra_bones) > 0:
-                        lines.append (l9)   
+                        lines.append (l9)
+                    if len (multiple_or_no_armature_mods) > 0:
+                        lines.append (l10)
+                
+                if export_shape_keys:
+                    if len (shapes_and_mods) > 0:
+                        lines.append (l11)   
+                
+                good_to_go = len (lines) == 0
                 
                 # popup
-                if len (lines) > 0:
+                if not good_to_go:
                     popup (lines=lines, icon='INFO', title='Checks')
                 
                     # console
@@ -1794,10 +1793,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     print ('')
                     print ('________________________________________________')
                     print ('')
-                    
-                else:
-                    good_to_go = True
-                    
+                  
             return good_to_go, image_info, image_set, lod_info, lods
         
         

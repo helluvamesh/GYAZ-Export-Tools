@@ -320,7 +320,10 @@ class SCENE_PT_GYAZ_Export (Panel):
             col.prop (owner, "skeletal_clear_transforms")
             col.prop (owner, "skeletal_shapes")
             col.prop (owner, "frame_range_mode")
-
+            col.split()
+            col.alignment = "RIGHT"
+            col.label (text="{0} fps".format(scene.render.fps))
+            
         elif asset_type == 'RIGID_ANIMATIONS':
             col.prop (owner, "rigid_anim_gather_from_collection")
             if owner.rigid_anim_gather_from_collection:
@@ -351,7 +354,10 @@ class SCENE_PT_GYAZ_Export (Panel):
             row.label (icon='BLANK1')
             row.prop (owner, "rigid_anim_name")
             if message1:
-                col.label (text="Scene start-end forced", icon='INFO')      
+                col.label (text="Scene start-end forced", icon='INFO')
+            col.split()
+            col.alignment = "RIGHT"
+            col.label (text="{0} fps".format(scene.render.fps))    
         
         row = lay.row (align=True)
         row.scale_y = 2

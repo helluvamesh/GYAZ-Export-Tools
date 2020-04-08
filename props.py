@@ -270,8 +270,8 @@ class PG_GYAZ_ExportProps (PropertyGroup):
     skeletal_mesh_vcolors: BoolProperty (name='Vertex Colors', default=True)
     rigid_anim_vcolors: BoolProperty (name='Vertex Colors', default=True)
     
-    skeletal_shapes: BoolProperty (name='Shape Keys', default=True)
-    rigid_anim_shapes: BoolProperty (name='Shape Keys', default=True)
+    skeletal_shapes: BoolProperty (name='Shape Keys', default=True, description="Not exported, if mesh has modifiers")
+    rigid_anim_shapes: BoolProperty (name='Shape Keys', default=True, description="Not exported, if mesh has modifiers")
     
     path_to_last_export: StringProperty (name='path to last export', default='')
     
