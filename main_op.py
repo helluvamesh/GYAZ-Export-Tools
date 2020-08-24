@@ -22,7 +22,7 @@
 
 import bpy, os, bmesh
 from bpy.types import AddonPreferences, UIList, Scene, Object, Mesh, Menu
-from mathutils import Vector, Matrix
+from mathutils import Vector, Matrix, Quaternion
 import numpy as np
 from math import radians
 from pathlib import Path
@@ -458,8 +458,10 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     for obj in ori_sel_objs:
                         for child in obj.children:
                             if child.type == 'ARMATURE' and child.name.startswith ('SOCKET_'):
-                                child.scale = (1, 1, 1)
-                                child.location *= 100
+                                child.scale *= .01
+                                if child.rotation_mode != 'QUATERNION':
+                                    child.rotation_mode = 'QUATERNION'
+                                child.rotation_quaternion = child.rotation_quaternion @ Quaternion((0.707, 0.707, .0, .0))
                                 sockets.append (child)
                                 
                 
