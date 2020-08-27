@@ -1320,7 +1320,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             if asset_type == 'STATIC_MESHES':
                 
                 # remove materials
-                rename_materials (objects = ori_sel_objs)
+                rename_materials (objects = meshes_to_export)
      
                 if pack_objects:
                     
@@ -1359,6 +1359,8 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
  
             elif asset_type == 'SKELETAL_MESHES':
                 
+                rename_materials (objects = meshes_to_export)
+                
                 if pack_objects:
                     
                     # export filter
@@ -1376,7 +1378,6 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                         
                         texture_root = root_folder + organizing_folder[:-1]
                         
-                        rename_materials (objects = meshes_to_export)
                         export_info = export_objects (filepath, objects = [final_rig] + mesh_children)
                         texture_export_info = export_images (objects = mesh_children, texture_root = texture_root, all_images = True)                
                     
