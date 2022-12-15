@@ -1115,7 +1115,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                             settings.file_format = final_image_format
                             settings.color_mode = final_color_mode
                             settings.color_depth = final_color_depth
-                            settings.compression = scene.gyaz_export.texture_compression * 100
+                            settings.compression = int(scene.gyaz_export.texture_compression * 100)
 
                             # save
                             new_image.save_render (filepath)
@@ -1221,8 +1221,8 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     action = get_active_action (object)
                     if action is not None:                            
                         frame_start, frame_end = action.frame_range
-                        scene.frame_start = frame_start
-                        scene.frame_end = frame_end
+                        scene.frame_start = int(frame_start)
+                        scene.frame_end = int(frame_end)
                         
                 def adjust_scene_to_action_start_end (object):
                     action = get_active_action (object)
@@ -1606,7 +1606,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                         poly_warning = 'Quads/ngons found: '
                     
                     bm = bmesh.new ()
-                    bm.from_object (obj, bpy.context.evaluated_depsgraph_get(), deform=False, cage=False, face_normals=False)
+                    bm.from_object (obj, bpy.context.evaluated_depsgraph_get(), cage=False, face_normals=False, vertex_normals=False)
                     faces = bm.faces
                     ngon_count = len ( [face for face in faces if len(face.verts)>max_face_vert_count] )
                     
@@ -1637,7 +1637,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                             for n in range (len(mesh.uv_layers)):
                                 mirrored_uvs_found = detect_mirrored_uvs (bm, uv_index=n)
                                 if mirrored_uvs_found:
-                                    mirrored_indices.append (n)
+                                    mirrored_indices.append (str(n))
                                 
                             if mirrored_uvs_found:
                                 mirrored_uv_objects.append (obj.name + ' (' + list_to_visual_list(mirrored_indices) + ')')

@@ -129,7 +129,7 @@ class Op_GYAZ_Export_SavePreset (bpy.types.Operator):
             # save user preferences
             bpy.context.area.type = 'PREFERENCES'
             bpy.ops.wm.save_userpref()
-            bpy.context.area.type = 'PROPERTIES'
+            bpy.context.area.type = 'VIEW_3D'
             
         return {'FINISHED'}
     
@@ -169,7 +169,7 @@ class Op_GYAZ_Export_RemovePreset (bpy.types.Operator):
         # save user preferences
         bpy.context.area.type = 'PREFERENCES'
         bpy.ops.wm.save_userpref()
-        bpy.context.area.type = 'PROPERTIES'      
+        bpy.context.area.type = 'VIEW_3D'      
             
         return {'FINISHED'}
 

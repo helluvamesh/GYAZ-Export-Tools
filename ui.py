@@ -55,10 +55,9 @@ class UI_UL_GYAZ_ExportActions (UIList):
 
 
 class SCENE_PT_GYAZ_Export_Bones (Panel):
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_context = "scene"
-    COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_EEVEE', 'BLENDER_WORKBENCH'}
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = "FBX"
     bl_label = 'Export Bones'
     
     # add ui elements here
@@ -160,10 +159,9 @@ class SCENE_PT_GYAZ_Export_Bones (Panel):
 
 
 class SCENE_PT_GYAZ_Export_Animation (Panel):
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_context = "scene"
-    COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_EEVEE', 'BLENDER_WORKBENCH'}
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = "FBX"
     bl_label = 'Export Animations'  
     
     # add ui elements here
@@ -211,10 +209,9 @@ class SCENE_PT_GYAZ_Export_Animation (Panel):
                 
 
 class SCENE_PT_GYAZ_Export (Panel):
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_context = "scene"
-    COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_EEVEE', 'BLENDER_WORKBENCH'}
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = "FBX"
     bl_label = 'Export'
     
     # add ui elements here
@@ -223,8 +220,6 @@ class SCENE_PT_GYAZ_Export (Panel):
         scene = bpy.context.scene
         owner = scene.gyaz_export        
         lay = self.layout
-        lay.use_property_split = True
-        lay.use_property_decorate = False
         
         row = lay.row (align=True)
         row.prop (owner, "show_options", text='', icon='TRIA_DOWN' if owner.show_options else 'TRIA_RIGHT', emboss=False)
@@ -233,8 +228,11 @@ class SCENE_PT_GYAZ_Export (Panel):
         if owner.show_options:
             row.prop (owner, "show_debug_props", text='', icon='SOLO_OFF' if not owner.show_debug_props else 'SOLO_ON', emboss=False)
             col = lay.column (align=True)
-            col.prop (owner, "texture_format_mode")
-            col.prop (owner, "texture_format_override", text='Override')
+            col.label (text="Texture Format:")
+            tex_row = col.row (align=True)
+            tex_row.prop (owner, "texture_format_mode", text="")
+            tex_row.prop (owner, "texture_format_override", text='')
+            col.separator ()
             col.prop (owner, "texture_compression", text='Compression')
             col = lay.column (align=True)    
             col.prop (owner, "use_prefixes")
@@ -242,7 +240,8 @@ class SCENE_PT_GYAZ_Export (Panel):
             col.prop (owner, "detect_mirrored_uvs")
             col.prop (owner, "allow_quads")
             col.prop (owner, "add_end_bones")
-            col.prop (owner, "mesh_smoothing")
+            col.label (text="Smoothing:")
+            col.prop (owner, "mesh_smoothing", text="")
             col = lay.column (align=True)
             col.prop (owner, "primary_bone_axis")
             col.prop (owner, "secondary_bone_axis")
@@ -300,7 +299,7 @@ class SCENE_PT_GYAZ_Export (Panel):
                 row.prop (owner, "static_mesh_pack_name")
             
         elif asset_type == 'SKELETAL_MESHES':
-            col.prop (owner, "skeletal_mesh_limit_bone_influences")
+            col.prop (owner, "skeletal_mesh_limit_bone_influences", text="")
             col.prop (owner, "use_skeletal_organizing_folder")          
             col.prop (owner, "skeletal_clear_transforms")
             col.prop (owner, "skeletal_mesh_vcolors")
@@ -319,7 +318,8 @@ class SCENE_PT_GYAZ_Export (Panel):
                 row.prop (owner, 'anim_object_name_override')
             col.prop (owner, "skeletal_clear_transforms")
             col.prop (owner, "skeletal_shapes")
-            col.prop (owner, "frame_range_mode")
+            col.label (text="Frame Range:")
+            col.prop (owner, "frame_range_mode", text="")
             col.split()
             col.alignment = "RIGHT"
             col.label (text="{0} fps".format(scene.render.fps))
@@ -338,9 +338,10 @@ class SCENE_PT_GYAZ_Export (Panel):
             rule1 = True if not owner.rigid_anim_pack_objects else False
             row.enabled = rule1
             row.prop (owner, "rigid_anim_cubes")
+            col.label (text="Frame Range:")
             row = col.row ()
             row.enabled = rule1
-            row.prop (owner, "frame_range_mode")
+            row.prop (owner, "frame_range_mode", text="")
             col.prop (owner, "rigid_anim_pack_objects")
             if owner.rigid_anim_pack_objects:
                 row = col.row (align=True)
@@ -374,10 +375,9 @@ class SCENE_PT_GYAZ_Export (Panel):
 
 
 class SCENE_PT_GYAZ_Export_Filter (Panel):
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_context = "scene"
-    COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_EEVEE', 'BLENDER_WORKBENCH'}
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = "FBX"
     bl_label = 'Export Filter' 
     
     # add ui elements here
@@ -451,10 +451,9 @@ class SCENE_PT_GYAZ_Export_Filter (Panel):
     
 
 class SCENE_PT_GYAZ_Export_Extras (Panel):
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_context = "scene"
-    COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_EEVEE', 'BLENDER_WORKBENCH'}
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = "FBX"
     bl_label = 'Export Extras'
     
     # add ui elements here

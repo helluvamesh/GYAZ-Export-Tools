@@ -128,11 +128,11 @@ class PG_GYAZ_ExportProps (PropertyGroup):
 
     skeletal_mesh_limit_bone_influences: EnumProperty (name='Bone Weights', description="Limit bone influences by vertex",
         items=(
-            ('1', '1', ''),
-            ('2', '2', ''),
-            ('4', '4', ''),
-            ('8', '8', ''),
-            ('unlimited', 'unlimited', '')
+            ('1', 'Bone Weights: 1', ''),
+            ('2', 'Bone Weights: 2', ''),
+            ('4', 'Bone Weights: 4', ''),
+            ('8', 'Bone Weights: 8', ''),
+            ('unlimited', 'Bone Weights: unlimited', '')
             ),
         default=prefs.skeletal_mesh_limit_bone_influences)
     

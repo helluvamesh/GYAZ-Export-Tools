@@ -19,8 +19,8 @@
 bl_info = {   
  "name": "GYAZ Export Tools",   
  "author": "Andras Gyalog",
- "version": (2, 83, 0),
- "blender": (2, 83, 0),   
+ "version": (3, 4, 0),
+ "blender": (3, 4, 0),   
  "location": "View3d > Toolshelf > Export FBX",   
  "description": "Extension of Blender's FBX Exporter for exporting static meshes, skeletal meshes and animations",
  "warning": "",   
