@@ -374,6 +374,49 @@ class SCENE_PT_GYAZ_Export (Panel):
             return mode == 'OBJECT' or mode == 'POSE' or mode == 'PAINT_TEXTURE' or mode == 'PAINT_VERTEX'
 
 
+class SCENE_PT_GYAZ_Export_Mesh (Panel):
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = "FBX"
+    bl_label = 'Export Mesh'
+    
+    # add ui elements here
+    def draw (self, context):
+        lay = self.layout
+
+        obj = bpy.context.active_object
+        if obj and obj.type == "MESH":
+            mesh = obj.data
+            owner = mesh.gyaz_export
+
+            col = lay.column (align=True)
+            col.label (text="UV Maps:")
+            iv_idx = -1
+            for uv_map in mesh.uv_layers:
+                iv_idx += 1
+                col.prop (owner, "uv_export", index=iv_idx, text=uv_map.name, toggle=True)
+
+            col = lay.column (align=True)
+            col.label (text="Color Attributes:")
+            vert_color_idx = -1
+            for vert_color in mesh.color_attributes:
+                vert_color_idx += 1
+                col.prop (owner, "vert_color_export", index=vert_color_idx, text=vert_color.name, toggle=True)
+
+            col = lay.column (align=True)
+            col.prop (owner, 'merge_materials')
+            if owner.merge_materials:
+                row = col.row (align=True)
+                row.label (icon='BLANK1')
+                row.prop (owner, 'atlas_name', text="")   
+
+    # when the buttons should show up    
+    @classmethod
+    def poll(cls, context):
+        ao = bpy.context.active_object
+        return ao is not None and ao.type == 'MESH'
+
+
 class SCENE_PT_GYAZ_Export_Filter (Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
@@ -510,6 +553,7 @@ def register():
     bpy.utils.register_class (SCENE_PT_GYAZ_Export_Bones)  
     bpy.utils.register_class (SCENE_PT_GYAZ_Export_Animation)   
     bpy.utils.register_class (SCENE_PT_GYAZ_Export)
+    bpy.utils.register_class (SCENE_PT_GYAZ_Export_Mesh)
     bpy.utils.register_class (SCENE_PT_GYAZ_Export_Filter)
     bpy.utils.register_class (SCENE_PT_GYAZ_Export_Extras)
     
@@ -521,6 +565,7 @@ def unregister():
     bpy.utils.unregister_class (SCENE_PT_GYAZ_Export_Bones)
     bpy.utils.unregister_class (SCENE_PT_GYAZ_Export_Animation)
     bpy.utils.unregister_class (SCENE_PT_GYAZ_Export)
+    bpy.utils.unregister_class (SCENE_PT_GYAZ_Export_Mesh)
     bpy.utils.unregister_class (SCENE_PT_GYAZ_Export_Filter)
     bpy.utils.unregister_class (SCENE_PT_GYAZ_Export_Extras)
     
