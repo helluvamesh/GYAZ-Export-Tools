@@ -336,7 +336,7 @@ class Op_GYAZ_Export_EncodeShapeKeysInUVChannels (Operator):
 # mesh props
 class PG_GYAZ_Export_MeshProps (PropertyGroup):
     uv_export: BoolVectorProperty (size=8, default=[True]*8, description='Whether the GYAZ Exporter keeps this uv map')
-    vert_color_export: BoolVectorProperty (size=8, default=(True, False, False, False, False, False, False, False), description='Whether the GYAZ Exporter keeps this vertex color layer')
+    vert_color_export: BoolVectorProperty (size=8, default=[True]*8, description='Whether the GYAZ Exporter keeps this vertex color layer')
     merge_materials: BoolProperty (name='Merge Materials', default=False, description='Whether the GYAZ Exporter merges materials on export or keeps them as they are')
     atlas_name: StringProperty (name='Atlas', default='', description='Name of the merged material')
     

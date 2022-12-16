@@ -266,9 +266,9 @@ class PG_GYAZ_ExportProps (PropertyGroup):
     
     filter_type: EnumProperty (items=(('START', 'START', ''), ('IN', 'IN', ''), ('END', 'END', '')), default='IN')
     
-    static_mesh_vcolors: BoolProperty (name='Vertex Colors', default=True)
-    skeletal_mesh_vcolors: BoolProperty (name='Vertex Colors', default=True)
-    rigid_anim_vcolors: BoolProperty (name='Vertex Colors', default=True)
+    static_mesh_vcolors: BoolProperty (name='Color Attributes', default=True)
+    skeletal_mesh_vcolors: BoolProperty (name='Color Attributes', default=True)
+    rigid_anim_vcolors: BoolProperty (name='Color Attributes', default=True)
     
     skeletal_shapes: BoolProperty (name='Shape Keys', default=True, description="Not exported, if mesh has modifiers")
     rigid_anim_shapes: BoolProperty (name='Shape Keys', default=True, description="Not exported, if mesh has modifiers")

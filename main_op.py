@@ -818,11 +818,11 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     
                     # vert colors
                     if not export_vert_colors:
-                        vcolors = mesh.vertex_colors
+                        vcolors = mesh.color_attributes
                         for vc in vcolors:
                             vcolors.remove (vc)
                     else:
-                        vcolors = mesh.vertex_colors
+                        vcolors = mesh.color_attributes
                         vcolors_to_remove = []
                         for index, vc in enumerate (vcolors):
                             if not mesh.gyaz_export.vert_color_export[index]:
