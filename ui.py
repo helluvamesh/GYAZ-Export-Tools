@@ -389,19 +389,21 @@ class SCENE_PT_GYAZ_Export_Mesh (Panel):
             mesh = obj.data
             owner = mesh.gyaz_export
 
-            col = lay.column (align=True)
-            col.label (text="UV Maps:")
-            iv_idx = -1
-            for uv_map in mesh.uv_layers:
-                iv_idx += 1
-                col.prop (owner, "uv_export", index=iv_idx, text=uv_map.name, toggle=True)
+            if len(mesh.uv_layers) > 0:
+                col = lay.column (align=True)
+                col.label (text="UV Maps:")
+                iv_idx = -1
+                for uv_map in mesh.uv_layers:
+                    iv_idx += 1
+                    col.prop (owner, "uv_export", index=iv_idx, text=uv_map.name, toggle=True)
 
-            col = lay.column (align=True)
-            col.label (text="Color Attributes:")
-            vert_color_idx = -1
-            for vert_color in mesh.color_attributes:
-                vert_color_idx += 1
-                col.prop (owner, "vert_color_export", index=vert_color_idx, text=vert_color.name, toggle=True)
+            if len(mesh.color_attributes) > 0:
+                col = lay.column (align=True)
+                col.label (text="Color Attributes:")
+                vert_color_idx = -1
+                for vert_color in mesh.color_attributes:
+                    vert_color_idx += 1
+                    col.prop (owner, "vert_color_export", index=vert_color_idx, text=vert_color.name, toggle=True)
 
             col = lay.column (align=True)
             col.prop (owner, 'merge_materials')
