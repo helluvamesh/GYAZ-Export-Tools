@@ -360,6 +360,9 @@ class SCENE_PT_GYAZ_Export (Panel):
             col.alignment = "RIGHT"
             col.label (text="{0} fps".format(scene.render.fps))    
         
+        col = lay.column (align=True)
+        col.label (text="Target App:")
+        col.prop (owner, "target_app", text="")
         row = lay.row (align=True)
         row.scale_y = 2
         row.operator ('object.gyaz_export_export', text='EXPORT', icon='EXPORT')

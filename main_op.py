@@ -141,13 +141,15 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
     # operator function
     def execute (self, context):
         
-        start_mode = bpy.context.mode[:]
-        
         bpy.ops.object.mode_set (mode='OBJECT')
         
         scene = bpy.context.scene
         space = bpy.context.space_data
         owner = scene.gyaz_export
+
+        target_cm_scale_unit = owner.target_app == "UNREAL"
+        target_y_up_z_forward = owner.target_app == "UNITY"
+        lod_setup_mode = "FBX_LOD_GROUP" if owner.target_app == "UNREAL" else "BY_NAME_WITH_0"
         
         scene_objects = scene.objects
         ori_ao = bpy.context.active_object
@@ -209,7 +211,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             # gather lods
             for obj in meshes_to_export:
 
-                obj_lods = []                    
+                obj_lods = []
                 name = str.lower(obj.name).replace(' ', '').replace('.', '').replace('_', '')
                 for n in range (1, 10):
                     suffix = 'lod' + str(n)
@@ -330,7 +332,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             ######################################################
             # MAIN VARIABLES
             ######################################################
-            
+
             scene_objects = bpy.context.scene.objects
             owner = scene.gyaz_export
                 
@@ -458,7 +460,8 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     for obj in ori_sel_objs:
                         for child in obj.children:
                             if child.type == 'ARMATURE' and child.name.startswith ('SOCKET_'):
-                                child.scale *= .01
+                                if target_cm_scale_unit:
+                                    child.scale *= .01
                                 if child.rotation_mode != 'QUATERNION':
                                     child.rotation_mode = 'QUATERNION'
                                 child.rotation_quaternion = child.rotation_quaternion @ Quaternion((0.707, 0.707, .0, .0))
@@ -576,6 +579,61 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     if action_export_mode != 'ACTIVE':                    
                         obj.animation_data_clear ()
                         
+            #######################################################
+            # AXIS ORIENTATION
+            #######################################################
+
+            if asset_type == "STATIC_MESHES" and target_y_up_z_forward:
+
+                bpy.ops.object.mode_set (mode='OBJECT')
+                
+                final_mats = []
+
+                rot_mat = Matrix.Rotation(radians(-90.0), 4, "X")
+                inverse_rot_mat = Matrix.Rotation(radians(90.0), 4, "X")
+
+                for obj in meshes_to_export:
+                    ori_mat = obj.matrix_world.copy()
+                    parent = obj.parent
+                    if parent is not None:
+                        obj.parent = None
+                        obj.matrix_world = ori_mat
+                    final_mat = rot_mat @ ori_mat @ inverse_rot_mat
+                    final_mats.append(final_mat)
+
+                    obj.matrix_world = Matrix()
+                    obj.matrix_world = rot_mat @ obj.matrix_world
+
+                ctx = bpy.context.copy()
+                ctx['selected_objects'] = meshes_to_export
+                ctx['selected_editable_objects'] = meshes_to_export
+                bpy.ops.object.transform_apply(ctx, location=True, rotation=True, scale=True)
+
+                obj_idx = -1
+                for obj in meshes_to_export:
+                    obj_idx += 1
+                    print(final_mats[obj_idx])
+                    obj.matrix_world = final_mats[obj_idx]
+
+            if (asset_type == "SKELETAL_MESHES" or asset_type == "ANIMATIONS") and target_y_up_z_forward:
+
+                bpy.ops.object.mode_set (mode='OBJECT')
+                
+                final_mats = []
+
+                rot_mat = Matrix.Rotation(radians(-90.0), 4, "X")
+                
+                ori_ao.matrix_world = rot_mat @ ori_ao.matrix_world
+
+                inverse_rot_mat = Matrix.Rotation(radians(90.0), 4, "X")
+
+                ctx = bpy.context.copy()
+                ctx['selected_objects'] = ctx['selected_editable_objects'] = [ori_ao]
+                bpy.ops.object.transform_apply(ctx, location=True, rotation=True, scale=True)
+
+                ctx = bpy.context.copy()
+                ctx['selected_objects'] = ctx['selected_editable_objects'] = meshes_to_export
+                bpy.ops.object.transform_apply(ctx, location=True, rotation=True, scale=True)
 
             #######################################################
             # BUILD FINAL RIG
@@ -609,6 +667,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 # renaming just once may not be enough
                 final_rig.name = root_bone_name
                 final_rig.name = root_bone_name
+                final_rig.rotation_mode = "QUATERNION"
                 
                 # remove drivers
                 if hasattr (final_rig_data, "animation_data") == True:
@@ -650,17 +709,18 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     bone.hide = False
                         
                 # make sure bones export with correct scale
-                bpy.ops.object.mode_set (mode='OBJECT')
-                final_rig.scale = (100, 100, 100)
-                bpy.ops.object.transform_apply (location=False, rotation=False, scale=True, properties=False)
-                final_rig.delta_scale = (0.01, 0.01, 0.01)
+                if target_cm_scale_unit:
+                    bpy.ops.object.mode_set (mode='OBJECT')
+                    final_rig.scale = (100, 100, 100)
+                    bpy.ops.object.transform_apply (location=False, rotation=False, scale=True, properties=False)
+                    final_rig.delta_scale = (0.01, 0.01, 0.01)
                 
-                # bind meshes to the final rig
-                for child in mesh_children:
-                    child.delta_scale[0] *= 100
-                    child.delta_scale[1] *= 100
-                    child.delta_scale[2] *= 100
+                    for child in mesh_children:
+                        child.delta_scale[0] *= 100
+                        child.delta_scale[1] *= 100
+                        child.delta_scale[2] *= 100
 
+                # bind meshes to the final rig
                 for child in mesh_children:
                     child.parent = final_rig
                     child.matrix_parent_inverse = final_rig.matrix_world.inverted ()
@@ -673,6 +733,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 def constraint_bones (source_bone, target_bone, source_obj, target_obj):
                     pbones = target_obj.pose.bones
                     pbone = pbones[target_bone]
+
                     c = pbone.constraints.new (type='COPY_LOCATION')
                     c.target = source_obj
                     c.subtarget = source_bone
@@ -681,28 +742,32 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     c.target = source_obj
                     c.subtarget = source_bone
                     
-                    c = pbone.constraints.new (type='TRANSFORM')
-                    c.target = source_obj
-                    c.subtarget = source_bone
-                    c.use_motion_extrapolate = True
-                    c.map_from = 'SCALE'
-                    c.map_to = 'SCALE'
-                    c.map_to_x_from = 'X'
-                    c.map_to_y_from = 'Y'
-                    c.map_to_z_from = 'Z'
-                    c.from_min_x_scale = -1
-                    c.from_max_x_scale = 1
-                    c.from_min_y_scale = -1
-                    c.from_max_y_scale = 1
-                    c.from_min_z_scale = -1
-                    c.from_max_z_scale = 1
-                    c.to_min_x_scale = -0.01
-                    c.to_max_x_scale = 0.01
-                    c.to_min_y_scale = -0.01
-                    c.to_max_y_scale = 0.01
-                    c.to_min_z_scale = -0.01
-                    c.to_max_z_scale = 0.01
-            
+                    if target_cm_scale_unit:
+                        c = pbone.constraints.new (type='TRANSFORM')
+                        c.target = source_obj
+                        c.subtarget = source_bone
+                        c.use_motion_extrapolate = True
+                        c.map_from = 'SCALE'
+                        c.map_to = 'SCALE'
+                        c.map_to_x_from = 'X'
+                        c.map_to_y_from = 'Y'
+                        c.map_to_z_from = 'Z'
+                        c.from_min_x_scale = -1
+                        c.from_max_x_scale = 1
+                        c.from_min_y_scale = -1
+                        c.from_max_y_scale = 1
+                        c.from_min_z_scale = -1
+                        c.from_max_z_scale = 1
+                        c.to_min_x_scale = -0.01
+                        c.to_max_x_scale = 0.01
+                        c.to_min_y_scale = -0.01
+                        c.to_max_y_scale = 0.01
+                        c.to_min_z_scale = -0.01
+                        c.to_max_z_scale = 0.01
+                    else:
+                        c = pbone.constraints.new (type='COPY_SCALE')
+                        c.target = source_obj
+                        c.subtarget = source_bone
             
                 # constraint 'export bones'        
                 for name in export_bone_list:
@@ -730,29 +795,34 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 c = final_rig.constraints.new (type='COPY_ROTATION')
                 c.target = ori_ao
                 c.subtarget = subtarget
+                c.target_space = "LOCAL"
                 
-                c = final_rig.constraints.new (type='TRANSFORM')
-                c.target = ori_ao
-                c.subtarget = subtarget
-                c.use_motion_extrapolate = True
-                c.map_from = 'SCALE'
-                c.map_to = 'SCALE'
-                c.map_to_x_from = 'X'
-                c.map_to_y_from = 'Y'
-                c.map_to_z_from = 'Z'
-                c.from_min_x_scale = -1
-                c.from_max_x_scale = 1
-                c.from_min_y_scale = -1
-                c.from_max_y_scale = 1
-                c.from_min_z_scale = -1
-                c.from_max_z_scale = 1
-                c.to_min_x_scale = -0.01
-                c.to_max_x_scale = 0.01
-                c.to_min_y_scale = -0.01
-                c.to_max_y_scale = 0.01
-                c.to_min_z_scale = -0.01
-                c.to_max_z_scale = 0.01
-                
+                if target_cm_scale_unit:
+                    c = final_rig.constraints.new (type='TRANSFORM')
+                    c.target = ori_ao
+                    c.subtarget = subtarget
+                    c.use_motion_extrapolate = True
+                    c.map_from = 'SCALE'
+                    c.map_to = 'SCALE'
+                    c.map_to_x_from = 'X'
+                    c.map_to_y_from = 'Y'
+                    c.map_to_z_from = 'Z'
+                    c.from_min_x_scale = -1
+                    c.from_max_x_scale = 1
+                    c.from_min_y_scale = -1
+                    c.from_max_y_scale = 1
+                    c.from_min_z_scale = -1
+                    c.from_max_z_scale = 1
+                    c.to_min_x_scale = -0.01
+                    c.to_max_x_scale = 0.01
+                    c.to_min_y_scale = -0.01
+                    c.to_max_y_scale = 0.01
+                    c.to_min_z_scale = -0.01
+                    c.to_max_z_scale = 0.01
+                else:
+                    c = final_rig.constraints.new (type='COPY_SCALE')
+                    c.target = ori_ao
+                    c.subtarget = subtarget
                 
                 # rename vert groups to match extra bone names
                 if rename_vert_groups_to_extra_bones:   
@@ -874,8 +944,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     if mesh.shape_keys is not None:
                         for key in mesh.shape_keys.key_blocks:
                             obj.shape_key_remove (key)            
-                            
-            
+
             #######################################################
             # EXPORT OPERATOR PROPS
             #######################################################
@@ -886,12 +955,13 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             use_active_collection = False
             global_scale = 1
             apply_unit_scale = False
-            apply_scale_options = 'FBX_SCALE_NONE'
+            apply_scale_options = 'FBX_SCALE_NONE' if target_cm_scale_unit else 'FBX_SCALE_ALL'
             axis_forward = '-Z'
             axis_up = 'Y'
             object_types = {'EMPTY', 'CAMERA', 'LIGHT', 'ARMATURE', 'MESH', 'OTHER'}
             bake_space_transform = False
             use_custom_props = False
+            use_space_transform = False
             
             # 'STRIP' is the only mode textures are not referenced in the fbx file (only referenced not copied - this is undesirable behavior)
             path_mode = 'STRIP'
@@ -1259,17 +1329,25 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                             obj_name = obj.name
                             if obj_name in lod_info_keys:
                                 lods = lod_info[obj_name]
-                                
-                                empty = bpy.data.objects.new (name='LOD_' + obj_name, object_data=None)
-                                empty['fbx_type'] = 'LodGroup'
-                                scene.collection.objects.link (empty)
-                                
-                                for lod in lods + [obj]:
-                                    lod.parent = empty
-                                    lod.matrix_parent_inverse = empty.matrix_world.inverted()
-                                    final_selected_objects.append (lod)
-                                    final_selected_objects.append (empty)
+                                if len(lods) > 0:
+                                    if lod_setup_mode == "FBX_LOD_GROUP":
+                                        empty = bpy.data.objects.new (name='LOD_' + obj_name, object_data=None)
+                                        empty['fbx_type'] = 'LodGroup'
+                                        scene.collection.objects.link (empty)
+                                    
+                                        for lod in lods + [obj]:
+                                            lod.parent = empty
+                                            lod.matrix_parent_inverse = empty.matrix_world.inverted()
+                                            final_selected_objects.append (lod)
+                                            final_selected_objects.append (empty)
 
+                                    elif lod_setup_mode == "BY_NAME_WITH_0":
+                                        for lod in lods + [obj]:
+                                            final_selected_objects.append (lod)
+                                        obj.name = obj.name + "_LOD0"
+
+                                else:
+                                    final_selected_objects.append (obj)
                     
                     for obj in scene.collection.objects:
                         obj.select_set (False)
@@ -1278,11 +1356,44 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                         obj.select_set (True)
                     
                     def ex ():
-                        # override context
                         ctx = bpy.context.copy()
                         ctx['selected_objects'] = final_selected_objects
                         
-                        bpy.ops.export_scene.fbx (ctx, filepath=filepath, use_selection=use_selection, use_active_collection=use_active_collection, embed_textures=embed_textures, global_scale=global_scale, apply_unit_scale=apply_unit_scale, apply_scale_options=apply_scale_options, axis_forward=axis_forward, axis_up=axis_up, object_types=object_types, bake_space_transform=bake_space_transform, use_custom_props=use_custom_props, path_mode=path_mode, batch_mode=batch_mode, use_mesh_modifiers=use_mesh_modifiers, use_mesh_modifiers_render=use_mesh_modifiers_render, mesh_smooth_type=mesh_smooth_type, use_mesh_edges=use_mesh_edges, use_tspace=use_tspace, use_armature_deform_only=use_armature_deform_only, add_leaf_bones=add_leaf_bones, primary_bone_axis=primary_bone_axis, secondary_bone_axis=secondary_bone_axis, armature_nodetype=armature_nodetype, bake_anim=bake_anim, bake_anim_use_all_bones=bake_anim_use_all_bones, bake_anim_use_nla_strips=bake_anim_use_nla_strips, bake_anim_use_all_actions=bake_anim_use_all_actions, bake_anim_force_startend_keying=bake_anim_force_startend_keying, bake_anim_step=bake_anim_step, bake_anim_simplify_factor=bake_anim_simplify_factor )               
+                        bpy.ops.export_scene.fbx (
+                            ctx, 
+                            filepath=filepath, 
+                            use_selection=use_selection,
+                            use_active_collection=use_active_collection, 
+                            embed_textures=embed_textures, 
+                            global_scale=global_scale, 
+                            apply_unit_scale=apply_unit_scale, 
+                            apply_scale_options=apply_scale_options, 
+                            axis_forward=axis_forward, 
+                            axis_up=axis_up, 
+                            object_types=object_types, 
+                            use_space_transform=use_space_transform,
+                            bake_space_transform=bake_space_transform, 
+                            use_custom_props=use_custom_props, 
+                            path_mode=path_mode, 
+                            batch_mode=batch_mode, 
+                            use_mesh_modifiers=use_mesh_modifiers, 
+                            use_mesh_modifiers_render=use_mesh_modifiers_render, 
+                            mesh_smooth_type=mesh_smooth_type, 
+                            use_mesh_edges=use_mesh_edges, 
+                            use_tspace=use_tspace, 
+                            use_armature_deform_only=use_armature_deform_only, 
+                            add_leaf_bones=add_leaf_bones, 
+                            primary_bone_axis=primary_bone_axis, 
+                            secondary_bone_axis=secondary_bone_axis, 
+                            armature_nodetype=armature_nodetype, 
+                            bake_anim=bake_anim, 
+                            bake_anim_use_all_bones=bake_anim_use_all_bones,
+                            bake_anim_use_nla_strips=bake_anim_use_nla_strips, 
+                            bake_anim_use_all_actions=bake_anim_use_all_actions, 
+                            bake_anim_force_startend_keying=bake_anim_force_startend_keying, 
+                            bake_anim_step=bake_anim_step, 
+                            bake_anim_simplify_factor=bake_anim_simplify_factor 
+                        )               
                         report (self, 'Export has been successful.', 'INFO')     
                     
                     if asset_type == 'STATIC_MESHES' or asset_type == 'SKELETAL_MESHES':
@@ -1306,7 +1417,6 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             
             bpy.ops.object.mode_set (mode='OBJECT')
             
-            owner = scene.gyaz_export
             pack_name = sn(pack_name)
             root_folder += '/'
             
@@ -1517,24 +1627,25 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 if image.users == 0:
                     image.use_fake_user = True
             
-                    
-            # export_info: for opening last export in explorer
-            info = None
-            if 'export_info' in locals ():
-                if export_info is not None:
-                    info = export_info
-                elif 'texture_export_info' in locals ():
-                    if texture_export_info is not None:
-                        info = texture_export_info[:-1]
             
-            if info is not None:  
-                info = os.path.abspath ( bpy.path.abspath (info) )
-                bpy.context.scene.gyaz_export.path_to_last_export = info
-            
-            # the blend file is saved once before changing anything, everything is saved besides the path to last export
-            # because it's saved after reloading the blend file
-            # so save blend file again to save the path to last export, too
-            bpy.ops.wm.save_as_mainfile (filepath=blend_path)  
+            if not owner.dont_reload_scene:
+                # export_info: for opening last export in explorer
+                info = None
+                if 'export_info' in locals ():
+                    if export_info is not None:
+                        info = export_info
+                    elif 'texture_export_info' in locals ():
+                        if texture_export_info is not None:
+                            info = texture_export_info[:-1]
+                
+                if info is not None:  
+                    info = os.path.abspath ( bpy.path.abspath (info) )
+                    bpy.context.scene.gyaz_export.path_to_last_export = info
+                
+                # the blend file is saved once before changing anything, everything is saved besides the path to last export
+                # because it's saved after reloading the blend file
+                # so save blend file again to save the path to last export, too
+                bpy.ops.wm.save_as_mainfile (filepath=blend_path)  
 
 
         ###############################################################            

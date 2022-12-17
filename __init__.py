@@ -50,7 +50,7 @@ bpy.utils.register_class (GYAZ_Export_Preset_ExportBoneItem)
 #preset
 class GYAZ_Export_BonePresetItem (PropertyGroup):
     preset_name: StringProperty (default='')
-    root_mode: EnumProperty (items=(('BONE', 'Bone: root', ''), ('OBJECT', 'Object', '')), default='BONE')
+    root_mode: EnumProperty (items=(('BONE', 'Bone', ''), ('OBJECT', 'Object', '')), default='BONE')
     root_bone_name: StringProperty (default='root')
     extra_bones: CollectionProperty(type=GYAZ_Export_Preset_ExtraBoneItem)
     export_bones: CollectionProperty(type=GYAZ_Export_Preset_ExportBoneItem)
@@ -142,6 +142,14 @@ class GYAZ_Export_Preferences (AddonPreferences):
             ('-Z', '-Z', '')),
         default='X')
     
+    target_app: EnumProperty (
+        name="Target App",
+        items=(
+            ("UNREAL", "Unreal", ""),
+            ("UNITY", "Unity", "")
+        ),
+        default="UNREAL"
+    )
     
     def draw (self, context):
         lay = self.layout 

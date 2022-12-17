@@ -99,7 +99,7 @@ class PG_GYAZ_ExportProps (PropertyGroup):
                              items=(('BONE', 'Bone', ''), 
                                     ('OBJECT', 'Object', ''))
                                     , 
-                             default='OBJECT', 
+                             default='BONE', 
                              description='Root Mode. Bone: top of hierarchy is the specified bone,' \
                                        + 'Object: top of hierarchy is the object (renamed as "root") and the root bone, if found, is removed.'
                              )
@@ -294,7 +294,16 @@ class PG_GYAZ_ExportProps (PropertyGroup):
             ('-Y', 'Secondary Bone Axis: -Y', ''),
             ('-Z', 'Secondary Bone Axis: -Z', '')),
         default=prefs.secondary_bone_axis)
-    
+
+    target_app: EnumProperty (
+        name="Target App",
+        items=(
+            ("UNREAL", "Unreal", ""),
+            ("UNITY", "Unity", "")
+        ),
+        default=prefs.target_app
+    )
+
     # debug
     show_debug_props: BoolProperty (name='Developer', default=False, description="Show properties for debugging")
     
