@@ -309,9 +309,15 @@ class SCENE_PT_GYAZ_Export (Panel):
                 row.prop (owner, 'anim_object_name_override')
             col.prop (owner, "skeletal_clear_transforms")
             col.prop (owner, "skeletal_shapes")
-            if owner.action_export_mode == "SCENE" or owner.action_export_mode == "NLA_STRIPS":
+            if owner.action_export_mode == "SCENE":
                 col.label (text="Animation Name:")
                 col.prop (owner, "global_anim_name", text="")
+            elif owner.rig_mode == "AS_IS":
+                col.prop (owner, "pack_actions")
+                if owner.pack_actions:
+                    row = col.row(align=True)
+                    row.label (text="", icon="BLANK1")
+                    row.prop (owner, "global_anim_name", text="")
             col.split()
             col.alignment = "RIGHT"
             col.label (text="{0} fps".format(scene.render.fps))

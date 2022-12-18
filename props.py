@@ -130,8 +130,7 @@ class PG_GYAZ_ExportProps (PropertyGroup):
             ('ACTIVE', 'ACTIVE ACTION', ""),
             ('ALL', 'ALL ACTIONS', ""),
             ('BY_NAME', 'ACTIONS BY NAME', ""),
-            ('SCENE', 'SCENE ANIMATION', ""),
-            ('NLA_STRIPS', 'NLA STRIPS', "")
+            ('SCENE', 'SCENE ANIMATION', "")
             ),
         default='ACTIVE')
     
@@ -205,7 +204,8 @@ class PG_GYAZ_ExportProps (PropertyGroup):
     static_mesh_pack_objects: BoolProperty (name='Pack Objects', default=False, description='Whether to pack all objects into one file or export them as separate files. If true, sockets will not be exported')
     skeletal_mesh_pack_objects: BoolProperty (name='Pack Objects', default=False, description='Whether to pack all objects into one file (name of the armature) or export them as separate files (names of mesh children)')
     rigid_anim_pack_objects: BoolProperty (name='Pack Objects', default=False, description="Whether to pack all objects into one file or export them as separate files. If checked, 'Use Scene Start End' is forced, 'Export Cubes' is not an option")
-        
+    pack_actions: BoolProperty (name='Pack Actions', default=False, description='Whether to pack all actions into one file or export them as separate files')
+
     use_static_mesh_organizing_folder: BoolProperty (name='Organizing Folder', default=False, description="Export objects into separate folders with the object's name. If 'Pack Objects' is true, export objects into a folder with the pack's name")
     use_rigid_anim_organizing_folder: BoolProperty (name='Organizing Folder', default=False, description="Export objects into separate folders with the object's name. If 'Pack Objects' is true, export objects into a folder with the pack's name")
     use_skeletal_organizing_folder: BoolProperty (name='Organizing Folder', default=False, description="Add an extra folder with the armature's name")

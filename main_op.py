@@ -1010,7 +1010,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             # ANIMATION
             bake_anim = False
             bake_anim_use_all_bones = False
-            bake_anim_use_nla_strips = owner.action_export_mode == "NLA_STRIPS"
+            bake_anim_use_nla_strips = False
             bake_anim_use_all_actions = False
             bake_anim_force_startend_keying = False
             bake_anim_step = 1
@@ -1540,7 +1540,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                                     
             elif asset_type == 'ANIMATIONS':
                 
-                if action_export_mode == "SCENE" or action_export_mode == "NLA_STRIPS":
+                if action_export_mode == "SCENE":
                     
                     # fbx export settings
                     bake_anim = True
@@ -1572,21 +1572,44 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     override_character_name = owner.anim_object_name_override
                     organizing_folder = sn(ori_ao_name) + '/' if use_organizing_folder else ''     
                     
-                    for action in actions_to_export:
+                    if owner.rig_mode == "AS_IS" and owner.pack_actions:
                         
-                        action_name = sn(action.name)
+                        # fbx export settings   
+                        bake_anim_use_all_actions = True
+
+                        all_actions = bpy.data.actions
+                        all_actions_list = [a for a in bpy.data.actions]
+                        for action in all_actions_list:
+                            if action not in actions_to_export:
+                                all_actions.remove(action)
+
                         name = sn(ori_ao_name) if not use_override_character_name else override_character_name
                         separator = '_' if not name == '' else ''
                         folder_path = root_folder + organizing_folder + anims_folder
-                        filepath = folder_path + animation_prefix + name + separator + action_name + animation_suffix + format
-                        os.makedirs (folder_path, exist_ok=True)
-                        
-                        set_active_action (action)
-                        adjust_scene_to_action_length (object = ori_ao)
-                        set_animation_name (action_name)
+                        anim_name = sn(owner.global_anim_name)
+                        filepath = folder_path + animation_prefix + name + separator + anim_name + animation_suffix + format
+                        os.makedirs (folder_path, exist_ok=True) 
 
                         export_objects (filepath, objects = [final_rig] + mesh_children)
-                        export_info = filepath
+                        export_info = filepath   
+
+                    else:
+
+                        for action in actions_to_export:
+                            
+                            action_name = sn(action.name)
+                            name = sn(ori_ao_name) if not use_override_character_name else override_character_name
+                            separator = '_' if not name == '' else ''
+                            folder_path = root_folder + organizing_folder + anims_folder
+                            filepath = folder_path + animation_prefix + name + separator + action_name + animation_suffix + format
+                            os.makedirs (folder_path, exist_ok=True)
+                            
+                            set_active_action (action)
+                            adjust_scene_to_action_length (object = ori_ao)
+                            set_animation_name (action_name)
+
+                            export_objects (filepath, objects = [final_rig] + mesh_children)
+                            export_info = filepath
                             
 
             elif asset_type == 'RIGID_ANIMATIONS':
@@ -1854,7 +1877,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 # missing_bones
                 rig_bone_names = [x.name for x in ori_ao.data.bones]
                 export_bone_names = [x.name for x in scene.gyaz_export.export_bones]
-                if not scene.gyaz_export.export_all_bones:
+                if not scene.gyaz_export.export_all_bones and owner.rig_mode != "AS_IS":
                     missing_bones = [item.name for item in scene.gyaz_export.export_bones if item.name not in rig_bone_names and item.name != '']
                 if len (scene.gyaz_export.extra_bones) > 0:
                     for index, item in enumerate(scene.gyaz_export.extra_bones):
@@ -2045,11 +2068,8 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                                     else:
                                         report (self, 'No actions are set to be exported.', 'WARNING')
 
-                                elif action_export_mode == "SCENE" or action_export_mode == "NLA_STRIPS":
-                                    if action_export_mode == "NLA_STRIPS" and owner.rig_mode == "BUILD":
-                                        report (self, "Cannot export NLA strips, if Rig Mode is BUILD", "WARNING")
-
-                                    elif getattr (ori_ao, "animation_data") is not None:
+                                elif action_export_mode == "SCENE":
+                                    if getattr (ori_ao, "animation_data") is not None:
                                         if is_str_blank(owner.global_anim_name):
                                             report (self, 'Animation name is invalid.', 'WARNING')
                                         else:
