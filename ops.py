@@ -517,39 +517,6 @@ class Op_GYAZ_Export_MoveExtraBoneItem (bpy.types.Operator):
         return {'FINISHED'}
     
 
-class Op_GYAZ_Export_SetActiveActionToExport (bpy.types.Operator):
-       
-    bl_idname = "object.gyaz_export_set_active_action_to_export"  
-    bl_label = "GYAZ Export: Set Active Action to Export"
-    bl_description = "Set active action"
-    
-    ui_index: IntProperty (name='', default=0)
-    
-    # operator function
-    def execute(self, context):
-        index = self.ui_index     
-        scene = bpy.context.scene
-        
-        # get active action's name
-        obj = bpy.context.active_object
-        action = get_active_action (obj)
-        action_name = action.name if action is not None else ''
-        
-        # make list of already listed actions
-        already_listed_actions = []
-        for item in scene.gyaz_export.actions:
-            already_listed_actions.append (item.name)
-        
-        if action == None:
-            report (self, 'No action found.', 'INFO')
-        elif action_name in already_listed_actions:
-            report (self, 'Action is already listed.', 'INFO')
-        else:
-            scene.gyaz_export.actions[index].name = action_name
-            
-        return {'FINISHED'}
-    
-
 class Op_GYAZ_Export_SetFilterType (bpy.types.Operator):
        
     bl_idname = "object.gyaz_export_set_filter_type"  
@@ -589,7 +556,6 @@ def register():
     bpy.utils.register_class (Op_GYAZ_Export_SetNameAsActiveBone)  
     bpy.utils.register_class (Op_GYAZ_Export_MoveExtraBoneItem)
     bpy.utils.register_class (Op_GYAZ_Export_RemoveItemFromActions) 
-    bpy.utils.register_class (Op_GYAZ_Export_SetActiveActionToExport)  
     bpy.utils.register_class (Op_GYAZ_Export_SetFilterType)  
     
     
@@ -610,8 +576,7 @@ def unregister():
     bpy.utils.unregister_class (Op_GYAZ_Export_SetParentAsActiveBone)  
     bpy.utils.unregister_class (Op_GYAZ_Export_SetNameAsActiveBone)  
     bpy.utils.unregister_class (Op_GYAZ_Export_MoveExtraBoneItem)
-    bpy.utils.unregister_class (Op_GYAZ_Export_RemoveItemFromActions) 
-    bpy.utils.unregister_class (Op_GYAZ_Export_SetActiveActionToExport)  
+    bpy.utils.unregister_class (Op_GYAZ_Export_RemoveItemFromActions)  
     bpy.utils.unregister_class (Op_GYAZ_Export_SetFilterType)  
     
     

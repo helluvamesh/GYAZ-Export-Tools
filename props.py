@@ -95,6 +95,16 @@ class PG_GYAZ_ExportProps (PropertyGroup):
          
     active_preset: EnumProperty (name = 'Active Preset', items = get_preset_names, default = None, update=load_active_preset)    
     
+    rig_mode: EnumProperty(
+        name="Rig Mode",
+        items=(
+            ("AS_IS", "AS IS", ""),
+            ("BUILD", "BUILD RIG", "")
+        ),
+        default="AS_IS",
+        description="AS_IS: Leave the rig alone, BUILD: Build a new simplified rig"
+    )
+
     root_mode: EnumProperty (name='Root Mode', 
                              items=(('BONE', 'Bone', ''), 
                                     ('OBJECT', 'Object', ''))
@@ -117,9 +127,11 @@ class PG_GYAZ_ExportProps (PropertyGroup):
 
     action_export_mode: EnumProperty (name='Export Actions',
         items=(
-            ('ACTIVE', 'ACTIVE', ""),
-            ('ALL', 'ALL', ""),
-            ('BY_NAME', 'BY NAME', "")
+            ('ACTIVE', 'ACTIVE ACTION', ""),
+            ('ALL', 'ALL ACTIONS', ""),
+            ('BY_NAME', 'ACTIONS BY NAME', ""),
+            ('SCENE', 'SCENE ANIMATION', ""),
+            ('NLA_STRIPS', 'NLA STRIPS', "")
             ),
         default='ACTIVE')
     
@@ -135,14 +147,6 @@ class PG_GYAZ_ExportProps (PropertyGroup):
             ('unlimited', 'Bone Weights: unlimited', '')
             ),
         default=prefs.skeletal_mesh_limit_bone_influences)
-    
-    frame_range_mode: EnumProperty (name='Frame Range', 
-        items=(
-            ('AUTO', 'Auto', ''),
-            ('SCENE_START_END', 'Scene Start End', ''),
-            ('ACTION_START_END', 'Action Start End', '')
-            ),
-        default='AUTO')
     
     export_folder_mode: EnumProperty (
         items=(
@@ -168,6 +172,8 @@ class PG_GYAZ_ExportProps (PropertyGroup):
     
     anim_object_name_override: StringProperty (name='', default='')
     
+    global_anim_name: StringProperty (name='', default='')
+
     static_mesh_pack_name: StringProperty (default='', name='', description="Pack name")
     
     rigid_anim_pack_name: StringProperty (default='', name='', description="Pack's name")
@@ -310,21 +316,14 @@ class PG_GYAZ_ExportProps (PropertyGroup):
     dont_reload_scene: BoolProperty (name="Don't Reload Scene", default=False, description="Debugging, whether not to reload the scene saved before the export")
 
 
-class PG_GYAZ_export_Action(PropertyGroup):
-    start: IntProperty(name="Start", min=0, default=1)
-    end: IntProperty(name="End", min=0, default=250)
-
-
 def register():
     bpy.utils.register_class (PG_GYAZ_Export_ExtraBoneItem)
     bpy.utils.register_class (PG_GYAZ_Export_ExportBoneItem)
     bpy.utils.register_class (PG_GYAZ_export_ExportActions)
     bpy.utils.register_class (PG_GYAZ_ExportProps)
     bpy.utils.register_class (PG_GYAZ_Export_ObjectProps)
-    bpy.utils.register_class (PG_GYAZ_export_Action)
     Scene.gyaz_export = PointerProperty (type=PG_GYAZ_ExportProps)
     Object.gyaz_export = PointerProperty (type=PG_GYAZ_Export_ObjectProps)
-    Action.gyaz_export = PointerProperty (type=PG_GYAZ_export_Action)
     
     
 def unregister():
@@ -333,10 +332,8 @@ def unregister():
     bpy.utils.unregister_class (PG_GYAZ_export_ExportActions)
     bpy.utils.unregister_class (PG_GYAZ_ExportProps)
     bpy.utils.unregister_class (PG_GYAZ_Export_ObjectProps)
-    bpy.utils.unregister_class (PG_GYAZ_export_Action)
     del Scene.gyaz_export
     del Object.gyaz_export
-    del Action.gyaz_export
     
     
 if __name__ == "__main__":   
