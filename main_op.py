@@ -614,9 +614,12 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 rot_mat = Matrix.Rotation(radians(-90.0), 4, "X")
                 inverse_rot_mat = Matrix.Rotation(radians(90.0), 4, "X")
 
+                parents = []
+
                 for obj in meshes_to_export:
                     ori_mat = obj.matrix_world.copy()
                     parent = obj.parent
+                    parents.append(parent)
                     if parent is not None:
                         obj.parent = None
                         obj.matrix_world = ori_mat
@@ -632,10 +635,10 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 bpy.ops.object.transform_apply(ctx, location=True, rotation=True, scale=True)
 
                 obj_idx = -1
-                for obj in meshes_to_export:
+                for i, obj in enumerate(meshes_to_export):
                     obj_idx += 1
-                    print(final_mats[obj_idx])
                     obj.matrix_world = final_mats[obj_idx]
+                    obj.parent = parents[i]
 
             if (asset_type == "SKELETAL_MESHES" or asset_type == "ANIMATIONS") and target_y_up_z_forward:
 
