@@ -119,6 +119,24 @@ def gather_images_from_nodes (node_tree):
 
 def is_str_blank (s):
     return s.replace (" ", "") == ""
+
+
+def reset_all_pose_bones(rig):
+    zero_vec = (0, 0, 0)
+    zero_quat = (1, 0, 0, 0)
+    one_vec = (1, 1, 1)
+    zero_axis_angle = (0, 0, 1, 0)
+
+    for pbone in rig.pose.bones:
+        pbone.location = zero_vec
+        rm = pbone.rotation_mode
+        if rm == "QUATERNION":
+            pbone.rotation_quaternion = zero_quat
+        elif rm == "AXIS_ANGLE":
+            pbone.rotation_axis_angle = zero_axis_angle
+        else:
+            pbone.rotation_euler = zero_vec
+        pbone.scale = one_vec
     
 
 prefs = bpy.context.preferences.addons[__package__].preferences
@@ -1287,7 +1305,8 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 def set_active_action (action):
                     if getattr (ori_ao, "animation_data") == None:
                         ori_ao.animation_data_create ()
-                        
+                    
+                    reset_all_pose_bones(ori_ao)
                     ori_ao.animation_data.action = action
                     
                     
@@ -1319,13 +1338,11 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 def adjust_scene_to_action_length (object):
                     action = get_active_action (object)
                     if action is not None:
-                        if action.use_frame_range:
-                            scene.frame_start = int(action.frame_start)
-                            scene.frame_end = int(action.frame_end)
-                        else:
-                            frame_start, frame_end = action.frame_range
-                            scene.frame_start = int(frame_start)
-                            scene.frame_end = int(frame_end)
+                        frame_start, frame_end = action.frame_range
+                        scene.frame_start = int(frame_start)
+                        scene.frame_end = int(frame_end)
+                        scene.frame_preview_start = int(frame_start)
+                        scene.frame_preview_end = int(frame_end)
 
                 def set_animation_name (name):
                     bpy.context.scene.name = name
