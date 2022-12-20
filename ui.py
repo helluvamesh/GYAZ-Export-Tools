@@ -272,7 +272,6 @@ class SCENE_PT_GYAZ_Export (Panel):
             col.prop (owner, "static_mesh_gather_from_collection")
             if owner.static_mesh_gather_from_collection:
                 col.prop (owner, "static_mesh_gather_nested")
-            col.prop (owner, "use_static_mesh_organizing_folder")
             col.prop (owner, "static_mesh_clear_transforms")
             col.prop (owner, "static_mesh_vcolors")
             col.prop (owner, "export_collision")
@@ -290,18 +289,17 @@ class SCENE_PT_GYAZ_Export (Panel):
                 row.prop (owner, "static_mesh_pack_name")
             
         elif asset_type == 'SKELETAL_MESHES':
-            col.prop (owner, "skeletal_mesh_limit_bone_influences", text="")
-            col.prop (owner, "use_skeletal_organizing_folder")          
+            col.prop (owner, "skeletal_mesh_limit_bone_influences", text="")        
             col.prop (owner, "skeletal_clear_transforms")
             col.prop (owner, "skeletal_mesh_vcolors")
             col.prop (owner, "skeletal_shapes")
+            col.prop (owner, "export_lods")
             col.prop (owner, "export_textures")
             if owner.export_textures:
                 col.prop (owner, "export_only_textures")
             col.prop (owner, "skeletal_mesh_pack_objects")
             
         elif asset_type == 'ANIMATIONS':
-            col.prop (owner, "use_skeletal_organizing_folder")
             col.prop (owner, 'use_anim_object_name_override')
             if owner.use_anim_object_name_override:
                 row = col.row (align=True)
@@ -309,6 +307,7 @@ class SCENE_PT_GYAZ_Export (Panel):
                 row.prop (owner, 'anim_object_name_override')
             col.prop (owner, "skeletal_clear_transforms")
             col.prop (owner, "skeletal_shapes")
+            col.prop (owner, "export_lods")
             if owner.action_export_mode == "SCENE":
                 col.label (text="Animation Name:")
                 col.prop (owner, "global_anim_name", text="")
@@ -327,7 +326,6 @@ class SCENE_PT_GYAZ_Export (Panel):
             col.prop (owner, "rigid_anim_gather_from_collection")
             if owner.rigid_anim_gather_from_collection:
                 col.prop (owner, "rigid_anim_gather_nested")
-            col.prop (owner, "use_rigid_anim_organizing_folder")
             col.prop (owner, "rigid_anim_vcolors")
             col.prop (owner, "rigid_anim_shapes")
             row = col.row ()
@@ -337,6 +335,7 @@ class SCENE_PT_GYAZ_Export (Panel):
             row.enabled = True if not owner.rigid_anim_pack_objects else False
             row.prop (owner, "rigid_anim_cubes")
             col.prop (owner, "rigid_anim_pack_objects")
+            col.prop (owner, "export_lods")
             if owner.rigid_anim_pack_objects:
                 row = col.row (align=True)
                 row.label (icon='BLANK1')

@@ -206,10 +206,6 @@ class PG_GYAZ_ExportProps (PropertyGroup):
     rigid_anim_pack_objects: BoolProperty (name='Pack Objects', default=False, description="Whether to pack all objects into one file or export them as separate files. If checked, 'Use Scene Start End' is forced, 'Export Cubes' is not an option")
     pack_actions: BoolProperty (name='Pack Actions', default=False, description='Whether to pack all actions into one file or export them as separate files')
 
-    use_static_mesh_organizing_folder: BoolProperty (name='Organizing Folder', default=False, description="Export objects into separate folders with the object's name. If 'Pack Objects' is true, export objects into a folder with the pack's name")
-    use_rigid_anim_organizing_folder: BoolProperty (name='Organizing Folder', default=False, description="Export objects into separate folders with the object's name. If 'Pack Objects' is true, export objects into a folder with the pack's name")
-    use_skeletal_organizing_folder: BoolProperty (name='Organizing Folder', default=False, description="Add an extra folder with the armature's name")
-
     static_mesh_clear_transforms: BoolProperty (default=True, name='Clear Transforms', description="Clear object transforms")
     skeletal_clear_transforms: BoolProperty (default=True, name='Clear Transforms', description="Clear object transforms. Armature transformation will always be cleared if root motion is calculated from a bone")
     
@@ -246,7 +242,7 @@ class PG_GYAZ_ExportProps (PropertyGroup):
     
     export_sockets: BoolProperty (default=True, name='Sockets', description='Sockets need to be parented to the object and only work if a file only contains one object. Prefix: SOCKET_, Example: Object --> SOCKET_anything. Socket (armature) objects are gathered automatically and should not be selected. Scale is ignored')
     
-    export_lods: BoolProperty (default=True, name='LODs', description='Suffix: Obj --> Obj_LOD1, Obj_LOD2 (LOD0 should not have a suffix). LODs are gathered automatically and should not be selected')
+    export_lods: BoolProperty (default=True, name='LODs', description='Suffix: Obj --> Obj_LOD1, Obj_LOD2 (LOD0 should not have a suffix). LODs are gathered automatically and should not be selected. For Unreal only static mesh LODs are exported.')
     
     ignore_missing_second_uv_map: BoolProperty (default=False, name='Ignore 2nd UV Check')
     

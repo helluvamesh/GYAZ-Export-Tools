@@ -104,8 +104,7 @@ def clear_transformation_matrix (object):
 def _gather_images(node_tree, images):
     for node in node_tree.nodes:
         if node.type == 'TEX_IMAGE' or node.type == 'TEX_ENVIRONMENT':
-            if node is not None:
-                images.add(node.image)
+            images.add(node.image)
         elif node.type == 'GROUP':
             _gather_images(node.node_tree, images)
 
@@ -343,7 +342,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
         # root bone name
         root_bone_name = owner.root_bone_name
 
-        def main (asset_type, image_info, image_set, ori_ao, ori_ao_name, ori_sel_objs, mesh_children, meshes_to_export, root_folder, pack_objects, action_export_mode, pack_name, lod_info, lods, export_collision, collision_info, export_sockets):
+        def main (asset_type, image_set, ori_ao, ori_ao_name, ori_sel_objs, mesh_children, meshes_to_export, root_folder, pack_objects, action_export_mode, pack_name, lod_info, lods, export_collision, collision_info, export_sockets):
             
             ###############################################################
             #SAVE .BLEND FILE BEFORE DOING ANYTHING
@@ -1123,7 +1122,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 
             
             # texture export function
-            def export_images (objects, texture_root, all_images):
+            def export_images (texture_root):
                 # options: 'KEEP_IF_ANY', 'ALWAYS_OVERRIDE'
                 image_format_mode = scene.gyaz_export.texture_format_mode
                 override_format = scene.gyaz_export.texture_format_override
@@ -1250,16 +1249,8 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                         
                         os.makedirs (texture_folder, exist_ok=True)
                         
-                        if all_images:
-                            for image in image_set:
-                                export_image (image, texture_folder)
-                                
-                        else:
-                            for obj in objects:
-                                if obj.name in image_info.keys ():
-                                    images = image_info[obj.name]
-                                    for image in images:
-                                        export_image (image, texture_folder)
+                        for image in image_set:
+                            export_image (image, texture_folder)
 
 
                     # restore previous render settings
@@ -1460,7 +1451,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     if ex_tex and ex_tex_only:
                         ""
                     else:    
-                        return texture_root if use_organizing_folder else filepath
+                        return filepath
     
             
             ###########################################################
@@ -1473,13 +1464,6 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             root_folder += '/'
             
             if asset_type == 'STATIC_MESHES':
-                use_organizing_folder = owner.use_static_mesh_organizing_folder
-            if asset_type == 'SKELETAL_MESHES' or asset_type == 'ANIMATIONS':
-                use_organizing_folder = owner.use_skeletal_organizing_folder
-            if asset_type == 'RIGID_ANIMATIONS':
-                use_organizing_folder = owner.use_rigid_anim_organizing_folder
-            
-            if asset_type == 'STATIC_MESHES':
                 
                 # remove materials
                 rename_materials (objects = meshes_to_export)
@@ -1488,35 +1472,29 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     
                     prefix = static_mesh_prefix if not pack_name.startswith(static_mesh_prefix) else ''
                     suffix = static_mesh_suffix if not pack_name.endswith(static_mesh_suffix) else ''
-                    organizing_folder = pack_name + '/' if use_organizing_folder else ''
                     
                     filename = prefix + pack_name + suffix + format
-                    folder_path = root_folder + organizing_folder + meshes_folder
+                    folder_path = root_folder + meshes_folder
                     filepath = folder_path + filename
                     os.makedirs (folder_path, exist_ok=True)
                     
-                    texture_root = root_folder + organizing_folder[:-1]
-                    
                     export_info = export_objects (filepath, objects = ori_sel_objs)   
-                    texture_export_info = export_images (objects = ori_sel_objs, texture_root = texture_root, all_images = True)
-
+                    texture_export_info = export_images (texture_root = root_folder)
+                    
                 else:
                     
                     for obj in ori_sel_objs:
                             
                         prefix = static_mesh_prefix if not obj.name.startswith (static_mesh_prefix) else ''
                         suffix = static_mesh_suffix if not obj.name.endswith (static_mesh_suffix) else ''
-                        organizing_folder = sn(obj.name) + '/' if use_organizing_folder else ''
                         
                         filename = prefix + sn(obj.name) + suffix + format
-                        folder_path = root_folder + organizing_folder + meshes_folder
+                        folder_path = root_folder + meshes_folder
                         filepath = folder_path + filename
                         os.makedirs (folder_path, exist_ok=True)
                         
-                        texture_root = root_folder + organizing_folder[:-1]
-                        
                         export_info = export_objects (filepath, objects = [obj])
-                        texture_export_info = export_images (objects = [obj], texture_root = texture_root, all_images = False)
+                        texture_export_info = export_images (texture_root = root_folder)
                         
  
             elif asset_type == 'SKELETAL_MESHES':
@@ -1531,22 +1509,16 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     
                         prefix = skeletal_mesh_prefix if not pack_name.startswith (skeletal_mesh_prefix) else ''
                         suffix = skeletal_mesh_suffix if not pack_name.endswith (skeletal_mesh_suffix) else ''
-                        organizing_folder = pack_name + '/' if use_organizing_folder else ''
                         
                         filename = prefix + pack_name + suffix + format
-                        folder_path = root_folder + organizing_folder + meshes_folder
+                        folder_path = root_folder + meshes_folder
                         filepath = folder_path + filename
                         os.makedirs (folder_path, exist_ok=True)
                         
-                        texture_root = root_folder + organizing_folder[:-1]
-                        
                         export_info = export_objects (filepath, objects = [final_rig] + mesh_children)
-                        texture_export_info = export_images (objects = mesh_children, texture_root = texture_root, all_images = True)                
+                        texture_export_info = export_images (texture_root = root_folder)                
                     
                 else:
-                    
-                    organizing_folder = sn(ori_ao_name) + '/' if use_organizing_folder else ''
-                    texture_root = root_folder + organizing_folder[:-1]
                     
                     if len (mesh_children) > 0:
                         for child in mesh_children:
@@ -1555,12 +1527,12 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                             suffix = skeletal_mesh_suffix if not child.name.endswith (skeletal_mesh_suffix) else ''
                             
                             filename = prefix + sn(child.name) + suffix + format
-                            folder_path = root_folder + organizing_folder + meshes_folder
+                            folder_path = root_folder + meshes_folder
                             filepath = folder_path + filename
                             os.makedirs (folder_path, exist_ok=True)
                             
                             export_info = export_objects (filepath, objects = [final_rig, child])    
-                            texture_export_info = export_images (objects = mesh_children, texture_root = texture_root, all_images = True)
+                            texture_export_info = export_images (texture_root = root_folder)
                                           
                                     
             elif asset_type == 'ANIMATIONS':
@@ -1572,11 +1544,10 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
 
                     use_override_character_name = owner.use_anim_object_name_override
                     override_character_name = owner.anim_object_name_override
-                    organizing_folder = sn(ori_ao_name) + '/' if use_organizing_folder else '' 
 
                     name = sn(ori_ao_name) if not use_override_character_name else override_character_name
                     separator = '_' if not name == '' else ''
-                    folder_path = root_folder + organizing_folder + anims_folder
+                    folder_path = root_folder + anims_folder
                     anim_name = sn(owner.global_anim_name)
                     filepath = folder_path + animation_prefix + name + separator + anim_name + animation_suffix + format
                     os.makedirs (folder_path, exist_ok=True) 
@@ -1594,8 +1565,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     bake_anim = True
                     
                     use_override_character_name = owner.use_anim_object_name_override
-                    override_character_name = owner.anim_object_name_override
-                    organizing_folder = sn(ori_ao_name) + '/' if use_organizing_folder else ''     
+                    override_character_name = owner.anim_object_name_override   
                     
                     if owner.rig_mode == "AS_IS" and owner.pack_actions:
                         
@@ -1610,7 +1580,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
 
                         name = sn(ori_ao_name) if not use_override_character_name else override_character_name
                         separator = '_' if not name == '' else ''
-                        folder_path = root_folder + organizing_folder + anims_folder
+                        folder_path = root_folder + anims_folder
                         anim_name = sn(owner.global_anim_name)
                         filepath = folder_path + animation_prefix + name + separator + anim_name + animation_suffix + format
                         os.makedirs (folder_path, exist_ok=True) 
@@ -1625,7 +1595,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                             action_name = sn(action.name)
                             name = sn(ori_ao_name) if not use_override_character_name else override_character_name
                             separator = '_' if not name == '' else ''
-                            folder_path = root_folder + organizing_folder + anims_folder
+                            folder_path = root_folder + anims_folder
                             filepath = folder_path + animation_prefix + name + separator + action_name + animation_suffix + format
                             os.makedirs (folder_path, exist_ok=True)
                             
@@ -1660,17 +1630,15 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     
                     prefix = prefix_ if not pack_name.startswith(prefix_) else ''                            
                     suffix = suffix_ if not pack_name.startswith(suffix_) else ''                            
-                    organizing_folder = pack_name + '/' if use_organizing_folder else '/'
-                    folder_path = root_folder + organizing_folder + anims_folder
+                    folder_path = root_folder + "/" + anims_folder
                     filepath = folder_path + prefix + pack_name + '_' + anim_name + suffix + format
-                    texture_root = root_folder + organizing_folder
                     
                     os.makedirs(folder_path, exist_ok=True) 
                     set_animation_name (anim_name)
                         
                     export_info = export_objects (filepath, objects = ori_sel_objs)
                     if not rigid_anim_cubes:
-                        texture_export_info = export_images (objects = ori_sel_objs, texture_root = texture_root, all_images = True)
+                        texture_export_info = export_images (texture_root = root_folder)
                      
                 else:
                 
@@ -1678,11 +1646,8 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
 
                         prefix = prefix_ if not obj.name.startswith(prefix_) else ''
                         suffix = suffix_ if not obj.name.startswith(suffix_) else ''
-                        organizing_folder = sn(obj.name) + '/' if use_organizing_folder else '/'
-                        folder_path = root_folder + organizing_folder + anims_folder
+                        folder_path = root_folder + "/" + anims_folder
                         filepath = folder_path + prefix + sn(obj.name) + '_' + anim_name + suffix + format 
-                        
-                        texture_root = root_folder + organizing_folder
                         
                         adjust_scene_to_action_length (object = obj)
                         set_animation_name (anim_name)
@@ -1691,7 +1656,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                         
                         export_info = export_objects (filepath, objects = [obj])
                         if not rigid_anim_cubes:
-                            texture_export_info = export_images (objects = [obj], texture_root = texture_root, all_images = False)
+                            texture_export_info = export_images (texture_root = root_folder)
 
       
             # make sure no images get deleted (because aftert the export, the blend file is reloaded)
@@ -1874,12 +1839,12 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                                 if node_tree is not None:
                                     images = images.union( gather_images_from_nodes(node_tree) )
                                                                                                                                                                                 
-                        image_info[obj.name] = images
+                        image_info[obj] = images
             
             
             image_set = set ()
-            for item in image_info:
-                image_set = image_set.union (image_info[item])
+            for obj in image_info:
+                image_set = image_set.union(image_info[obj])
             
             if asset_type != 'ANIMATIONS':
                 if scene.gyaz_export.export_textures:           
@@ -2009,7 +1974,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 
                 export_sockets = owner.export_sockets
                 
-                main (asset_type, image_info, image_set, ori_ao, ori_ao_name, ori_sel_objs, mesh_children, meshes_to_export, root_folder, pack_objects, action_export_mode, pack_name, lod_info, lods, export_collision, collision_info, export_sockets)
+                main (asset_type, image_set, ori_ao, ori_ao_name, ori_sel_objs, mesh_children, meshes_to_export, root_folder, pack_objects, action_export_mode, pack_name, lod_info, lods, export_collision, collision_info, export_sockets)
         
             
         ###############################################################
