@@ -239,35 +239,41 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
         # GATHER LODs
         ############################################################### 
         
-        export_lods = owner.export_lods if asset_type == 'STATIC_MESHES' else False
+        asset_type_with_lod = False
+        if owner.target_app == "UNREAL":
+            asset_type_with_lod = asset_type == 'STATIC_MESHES'
+        elif owner.target_app == "UNITY":
+            asset_type_with_lod = True
+        export_lods = asset_type_with_lod and owner.export_lods
         lod_info = {}
         lods = []
-        if export_lods:
-            scene_objs_info = {str.lower(obj.name).replace(' ', '').replace('.', '').replace('_', ''): obj.name for obj in scene_objects}
 
-            # gather lods
-            for obj in meshes_to_export:
+        scene_objs_info = {str.lower(obj.name).replace(' ', '').replace('.', '').replace('_', ''): obj.name for obj in scene_objects}
 
-                obj_lods = []
-                name = str.lower(obj.name).replace(' ', '').replace('.', '').replace('_', '')
-                for n in range (1, 10):
-                    suffix = 'lod' + str(n)
-                    lod_name_candidate = name + suffix
- 
-                    if lod_name_candidate in scene_objs_info.keys ():
-                        lod_obj_name = scene_objs_info[lod_name_candidate]
-                        lod_obj = scene_objects.get (lod_obj_name)
-                        if lod_obj is not None:
-                            if lod_obj.type == 'MESH':
-                                obj_lods.append (lod_obj)
-                
-                lods += obj_lods
-                lod_info[obj.name] = obj_lods
+        # gather lods
+        for obj in meshes_to_export:
+
+            obj_lods = []
+            name = str.lower(obj.name).replace(' ', '').replace('.', '').replace('_', '')
+            for n in range (1, 10):
+                suffix = 'lod' + str(n)
+                lod_name_candidate = name + suffix
+
+                if lod_name_candidate in scene_objs_info.keys ():
+                    lod_obj_name = scene_objs_info[lod_name_candidate]
+                    lod_obj = scene_objects.get (lod_obj_name)
+                    if lod_obj is not None:
+                        if lod_obj.type == 'MESH':
+                            obj_lods.append (lod_obj)
             
-            meshes_to_export += lods
-            
-            lods_set = set (lods)
-            ori_sel_objs = list ( set (ori_sel_objs) - lods_set )
+            lods += obj_lods
+            lod_info[obj.name] = obj_lods
+        
+        meshes_to_export += lods
+        
+        lods_set = set (lods)
+        ori_sel_objs = list ( set (ori_sel_objs) - lods_set )
+        mesh_children = list(set(mesh_children) - lods_set)
             
         ###############################################################
         # GATHER COLLISION
@@ -372,12 +378,13 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             # MAIN VARIABLES
             ######################################################
 
-            scene_objects = bpy.context.scene.objects
             owner = scene.gyaz_export
                 
             # make sure all objects are selectable
-            values = [False] * len (scene_objects)
-            scene_objects.foreach_set ('hide_select', values)
+            for obj in scene.objects:
+                obj.hide_select = False
+                obj.hide_viewport = False
+                obj.hide_set(False)
             
             # make list of bones to keep    
             if asset_type == 'SKELETAL_MESHES' or asset_type == 'ANIMATIONS':
@@ -527,11 +534,10 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             #######################################################
             
             if (asset_type == 'ANIMATIONS' and owner.skeletal_shapes) or (asset_type == 'RIGID_ANIMATIONS' and rigid_anim_cubes):
-
+                
                 bpy.ops.object.mode_set (mode='OBJECT')                
-                            
-                objs = mesh_children if asset_type == 'ANIMATIONS' else ori_sel_objs
-                for obj in objs:
+                
+                for obj in meshes_to_export:
                     if obj.type == 'MESH':
                     
                         # replace all mesh data with a cube (keeping the original mesh object)
@@ -623,60 +629,56 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             # AXIS ORIENTATION
             #######################################################
 
-            if asset_type == "STATIC_MESHES" and target_y_up_z_forward:
+            # if asset_type == "STATIC_MESHES" and target_y_up_z_forward:
 
-                bpy.ops.object.mode_set (mode='OBJECT')
+            #     bpy.ops.object.mode_set (mode='OBJECT')
                 
-                final_mats = []
+            #     final_mats = []
 
-                rot_mat = Matrix.Rotation(radians(-90.0), 4, "X")
-                inverse_rot_mat = Matrix.Rotation(radians(90.0), 4, "X")
+            #     rot_mat = Matrix.Rotation(radians(-90.0), 4, "X")
+            #     inverse_rot_mat = Matrix.Rotation(radians(90.0), 4, "X")
 
-                parents = []
+            #     parents = []
 
-                for obj in meshes_to_export:
-                    ori_mat = obj.matrix_world.copy()
-                    parent = obj.parent
-                    parents.append(parent)
-                    if parent is not None:
-                        obj.parent = None
-                        obj.matrix_world = ori_mat
-                    final_mat = rot_mat @ ori_mat @ inverse_rot_mat
-                    final_mats.append(final_mat)
+            #     for obj in meshes_to_export:
+            #         ori_mat = obj.matrix_world.copy()
+            #         parent = obj.parent
+            #         parents.append(parent)
+            #         if parent is not None:
+            #             obj.parent = None
+            #             obj.matrix_world = ori_mat
+            #         final_mat = rot_mat @ ori_mat @ inverse_rot_mat
+            #         final_mats.append(final_mat)
 
-                    obj.matrix_world = Matrix()
-                    obj.matrix_world = rot_mat @ obj.matrix_world
+            #         obj.matrix_world = Matrix()
+            #         obj.matrix_world = rot_mat @ obj.matrix_world
 
-                ctx = bpy.context.copy()
-                ctx['selected_objects'] = meshes_to_export
-                ctx['selected_editable_objects'] = meshes_to_export
-                bpy.ops.object.transform_apply(ctx, location=True, rotation=True, scale=True)
+            #     bpy.ops.object.select_all (action='DESELECT')
+            #     for mesh in meshes_to_export:
+            #         mesh.select_set(True)
+            #     bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
 
-                obj_idx = -1
-                for i, obj in enumerate(meshes_to_export):
-                    obj_idx += 1
-                    obj.matrix_world = final_mats[obj_idx]
-                    obj.parent = parents[i]
-
+            #     obj_idx = -1
+            #     for i, obj in enumerate(meshes_to_export):
+            #         obj_idx += 1
+            #         obj.matrix_world = final_mats[obj_idx]
+            #         obj.parent = parents[i]
+            
             if (asset_type == "SKELETAL_MESHES" or asset_type == "ANIMATIONS") and target_y_up_z_forward:
 
                 bpy.ops.object.mode_set (mode='OBJECT')
-                
-                final_mats = []
 
                 rot_mat = Matrix.Rotation(radians(-90.0), 4, "X")
                 
                 ori_ao.matrix_world = rot_mat @ ori_ao.matrix_world
 
-                inverse_rot_mat = Matrix.Rotation(radians(90.0), 4, "X")
-
-                ctx = bpy.context.copy()
-                ctx['selected_objects'] = ctx['selected_editable_objects'] = [ori_ao]
-                bpy.ops.object.transform_apply(ctx, location=True, rotation=True, scale=True)
-
-                ctx = bpy.context.copy()
-                ctx['selected_objects'] = ctx['selected_editable_objects'] = meshes_to_export
-                bpy.ops.object.transform_apply(ctx, location=True, rotation=True, scale=True)
+                make_active_only(ori_ao)
+                bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+                
+                bpy.ops.object.select_all (action='DESELECT')
+                for mesh in meshes_to_export:
+                    mesh.select_set(True)
+                bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
 
             #######################################################
             # BUILD FINAL RIG
@@ -908,6 +910,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                         
                         ctx = bpy.context.copy ()
                         ctx['object'] = child
+                        ctx['active_object'] = child
 
                         bpy.ops.object.mode_set (mode='WEIGHT_PAINT')
                         child.data.use_paint_mask_vertex = True
@@ -997,6 +1000,8 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             # EXPORT OPERATOR PROPS
             #######################################################
             
+            static_meshes_for_unity = owner.target_app == "UNITY" and (asset_type == "STATIC_MESHES" or asset_type == "RIGID_ANIMATIONS")
+
             # FBX EXPORTER SETTINGS:
             # MAIN
             use_selection = True
@@ -1007,9 +1012,9 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             axis_forward = '-Z'
             axis_up = 'Y'
             object_types = {'EMPTY', 'CAMERA', 'LIGHT', 'ARMATURE', 'MESH', 'OTHER'}
-            bake_space_transform = False
+            use_space_transform = static_meshes_for_unity
+            bake_space_transform = static_meshes_for_unity
             use_custom_props = False
-            use_space_transform = False
             
             # 'STRIP' is the only mode textures are not referenced in the fbx file (only referenced not copied - this is undesirable behavior)
             path_mode = 'STRIP'
@@ -1369,7 +1374,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     # lods being exported in the wrong order in Unreal 4 (lod0, lod3, lod2, lod1)
                     # so skeletal mesh lods should be exported in separate files
                     # and imported one by one
-                    if export_lods and asset_type == 'STATIC_MESHES':
+                    if export_lods:
                         
                         lod_info_keys = set (lod_info.keys ())
                         for obj in objects:
@@ -1648,8 +1653,8 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     prefix_ = animation_prefix
                     suffix_ = animation_suffix
                 else:
-                    prefix_ = skeletal_mesh_prefix
-                    suffix_ = skeletal_mesh_suffix
+                    prefix_ = skeletal_mesh_prefix if owner.target_app == "UNREAL" else static_mesh_prefix
+                    suffix_ = skeletal_mesh_suffix if owner.target_app == "UNREAL" else static_mesh_suffix
                                 
                 if pack_objects:
                     
