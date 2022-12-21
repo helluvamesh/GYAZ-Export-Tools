@@ -20,7 +20,7 @@
 ##########################################################################################################
 ##########################################################################################################
 
-import bpy, os, bmesh
+import bpy, os, bmesh, re
 from bpy.types import AddonPreferences, UIList, Scene, Object, Mesh, Menu
 from mathutils import Vector, Matrix, Quaternion
 import numpy as np
@@ -75,9 +75,6 @@ def detect_mirrored_uvs (bm, uv_index):
         return True
     else:
         return False   
-
-
-untransformed_matrix = Matrix (([1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1])) 
  
                 
 def get_active_action (obj):
@@ -98,7 +95,7 @@ def clear_transformation (object):
 def clear_transformation_matrix (object):
     for c in object.constraints:
         c.mute = True
-    object.matrix_world = untransformed_matrix
+    object.matrix_world = Matrix()
     
 
 def _gather_images(node_tree, images):
@@ -136,7 +133,7 @@ def reset_all_pose_bones(rig):
         else:
             pbone.rotation_euler = zero_vec
         pbone.scale = one_vec
-    
+
 
 prefs = bpy.context.preferences.addons[__package__].preferences
 
@@ -169,11 +166,10 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
 
         target_cm_scale_unit = owner.target_app == "UNREAL"
         target_y_up_z_forward = owner.target_app == "UNITY"
-        lod_setup_mode = "FBX_LOD_GROUP" if owner.target_app == "UNREAL" else "BY_NAME_WITH_0"
         
         scene_objects = scene.objects
         ori_ao = bpy.context.active_object
-        ori_ao_name = bpy.context.active_object.name
+        ori_ao_ori_name = ori_ao.name
         
         asset_type = owner.skeletal_asset_type if ori_ao.type == 'ARMATURE' else owner.rigid_asset_type 
 
@@ -205,7 +201,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             if not gather_from_collection:
                 ori_sel_objs = [obj for obj in bpy.context.selected_objects if obj.gyaz_export.export]
             else:
-                name = ori_ao_name
+                name = ori_ao.name
                 collections = bpy.data.collections
                 x = [col for col in collections if name in col.objects]
                 if x:
@@ -244,35 +240,68 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
         elif owner.target_app == "UNITY":
             asset_type_with_lod = True
         export_lods = asset_type_with_lod and owner.export_lods
+
+        lod_pattern = re.compile("(.*)[_\\s]lod_?(\\d+)$", re.IGNORECASE)
+
+        def get_name_and_lod_index(name):
+            finds = re.findall(lod_pattern, name)
+            if len(finds) == 1:
+                return finds[0]
+            else:
+                return None
+
+        # {obj_name_wo_lod: [(obj_ref, lod_idx)]}
+        lod_level_map_with_name_key = {}
+
+        # {obj: obj_name_wo_lod}
+        obj_to_obj_name_wo_lod_map = {}
+
+        for obj in scene.objects:
+            info = get_name_and_lod_index(obj.name)
+
+            obj_name_wo_lod = ""
+            lod_idx = 0
+
+            if info is not None:
+                obj_name_wo_lod = info[0]
+                lod_idx = int(info[1])
+            else:
+                # not a lod obj
+                obj_name_wo_lod = obj.name
+                lod_idx = 0
+
+            info_list = lod_level_map_with_name_key.get(obj_name_wo_lod)
+            if info_list is None:
+                info_list = []
+                lod_level_map_with_name_key[obj_name_wo_lod] = info_list
+            info_list.append((obj, lod_idx))
+
+            obj_to_obj_name_wo_lod_map[obj] = obj_name_wo_lod
+
+        # sort by lod_idx
+        for lod_level_info in lod_level_map_with_name_key.values():
+            lod_level_info.sort(key=lambda x: x[1])
+
+        # {obj_ref: (lod_objs, obj_name_wo_lod)}
         lod_info = {}
-        lods = []
 
-        scene_objs_info = {str.lower(obj.name).replace(' ', '').replace('.', '').replace('_', ''): obj.name for obj in scene_objects}
+        lod_set = set()
 
-        # gather lods
         for obj in meshes_to_export:
+            obj_name_wo_lod = obj_to_obj_name_wo_lod_map[obj]
+            lods = []
+            for lod_level_info in lod_level_map_with_name_key[obj_name_wo_lod]:
+                lod_obj = lod_level_info[0]
+                lod_idx = lod_level_info[1]
+                if obj is not lod_obj and lod_idx > 0:
+                    lods.append(lod_obj)
+                    lod_set.add(lod_obj)
+            lod_info[obj] = (lods, obj_name_wo_lod)
 
-            obj_lods = []
-            name = str.lower(obj.name).replace(' ', '').replace('.', '').replace('_', '')
-            for n in range (1, 10):
-                suffix = 'lod' + str(n)
-                lod_name_candidate = name + suffix
-
-                if lod_name_candidate in scene_objs_info.keys ():
-                    lod_obj_name = scene_objs_info[lod_name_candidate]
-                    lod_obj = scene_objects.get (lod_obj_name)
-                    if lod_obj is not None:
-                        if lod_obj.type == 'MESH':
-                            obj_lods.append (lod_obj)
-            
-            lods += obj_lods
-            lod_info[obj.name] = obj_lods
+        meshes_to_export += list(lod_set)
         
-        meshes_to_export += lods
-        
-        lods_set = set (lods)
-        ori_sel_objs = list ( set (ori_sel_objs) - lods_set )
-        mesh_children = list(set(mesh_children) - lods_set)
+        ori_sel_objs = list(set(ori_sel_objs) - lod_set)
+        mesh_children = list(set(mesh_children) - lod_set)
             
         ###############################################################
         # GATHER COLLISION
@@ -306,6 +335,8 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             ori_sel_objs = list ( set (ori_sel_objs) - collision_objs_ori )
             meshes_to_export = list ( set (meshes_to_export) - collision_objs_ori )
         
+        ###############################################################
+        ############################################################### 
 
         root_folder = owner.export_folder
         
@@ -314,7 +345,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             pack_name = owner.static_mesh_pack_name
         elif asset_type == 'SKELETAL_MESHES' or asset_type == 'ANIMATIONS':
             pack_objects = owner.skeletal_mesh_pack_objects
-            pack_name = ori_ao_name
+            pack_name = ori_ao_ori_name
         elif asset_type == 'RIGID_ANIMATIONS':
             pack_objects = owner.rigid_anim_pack_objects
             pack_name = owner.rigid_anim_pack_name
@@ -342,7 +373,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
         # root bone name
         root_bone_name = owner.root_bone_name
 
-        def main (asset_type, image_set, ori_ao, ori_ao_name, ori_sel_objs, mesh_children, meshes_to_export, root_folder, pack_objects, action_export_mode, pack_name, lod_info, lods, export_collision, collision_info, export_sockets):
+        def main (asset_type, image_set, ori_ao, ori_sel_objs, mesh_children, meshes_to_export, root_folder, pack_objects, action_export_mode, pack_name, lod_info, export_collision, collision_info, export_sockets):
             
             ###############################################################
             #SAVE .BLEND FILE BEFORE DOING ANYTHING
@@ -516,12 +547,10 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 # clear lod transform
                 if export_lods:
                         
-                    lod_info_keys = set (lod_info.keys ())
                     for obj in ori_sel_objs:
-                        obj_name = obj.name
-                        if obj_name in lod_info_keys:
-                            lods = lod_info[obj_name]
-                            
+                        lod_info_tuple = lod_info.get(obj)
+                        if lod_info_tuple is not None:
+                            lods = lod_info_tuple[0]
                             for lod in lods:
                                 if clear_transforms:
                                     clear_transformation(lod)             
@@ -906,10 +935,6 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 for child in mesh_children:
                     if len (child.vertex_groups) > 0:
                         make_active_only (child)
-                        
-                        ctx = bpy.context.copy ()
-                        ctx['object'] = child
-                        ctx['active_object'] = child
 
                         bpy.ops.object.mode_set (mode='WEIGHT_PAINT')
                         child.data.use_paint_mask_vertex = True
@@ -917,11 +942,10 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                             
                         if limit_prop != 'unlimited':
                             limit = int (limit_prop)
-                            bpy.ops.object.vertex_group_limit_total (ctx, group_select_mode='ALL', limit=limit)
+                            bpy.ops.object.vertex_group_limit_total (group_select_mode='ALL', limit=limit)
                     
                         # clean vertex weights with 0 influence
-                        bpy.ops.object.vertex_group_clean (ctx, group_select_mode='ALL', limit=0, keep_single=False)
-            
+                        bpy.ops.object.vertex_group_clean (group_select_mode='ALL', limit=0, keep_single=False)
             
             bpy.ops.object.mode_set (mode='OBJECT')
             bpy.ops.object.select_all (action='DESELECT')          
@@ -1367,14 +1391,14 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     # and imported one by one
                     if export_lods:
                         
-                        lod_info_keys = set (lod_info.keys ())
                         for obj in objects:
-                            obj_name = obj.name
-                            if obj_name in lod_info_keys:
-                                lods = lod_info[obj_name]
+                            lod_info_tuple = lod_info.get(obj)
+                            if lod_info_tuple is not None:
+                                lods = lod_info_tuple[0]
+                                obj_name_wo_lod = lod_info_tuple[1]
                                 if len(lods) > 0:
-                                    if lod_setup_mode == "FBX_LOD_GROUP":
-                                        empty = bpy.data.objects.new (name='LOD_' + obj_name, object_data=None)
+                                    if owner.target_app == "UNREAL":
+                                        empty = bpy.data.objects.new (name='LOD_' + obj_name_wo_lod, object_data=None)
                                         empty['fbx_type'] = 'LodGroup'
                                         scene.collection.objects.link (empty)
                                     
@@ -1384,10 +1408,10 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                                             final_selected_objects.append (lod)
                                             final_selected_objects.append (empty)
 
-                                    elif lod_setup_mode == "BY_NAME_WITH_0":
+                                    elif owner.target_app == "UNITY":
                                         for lod in lods + [obj]:
                                             final_selected_objects.append (lod)
-                                        obj.name = obj.name + "_LOD0"
+                                        obj.name = obj_name_wo_lod + "_LOD0"
 
                                 else:
                                     final_selected_objects.append (obj)
@@ -1484,11 +1508,13 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 else:
                     
                     for obj in ori_sel_objs:
+
+                        obj_name = sn(lod_info[obj][1])
                             
-                        prefix = static_mesh_prefix if not obj.name.startswith (static_mesh_prefix) else ''
-                        suffix = static_mesh_suffix if not obj.name.endswith (static_mesh_suffix) else ''
+                        prefix = static_mesh_prefix if not obj_name.startswith (static_mesh_prefix) else ''
+                        suffix = static_mesh_suffix if not obj_name.endswith (static_mesh_suffix) else ''
                         
-                        filename = prefix + sn(obj.name) + suffix + format
+                        filename = prefix + obj_name + suffix + format
                         folder_path = root_folder + meshes_folder
                         filepath = folder_path + filename
                         os.makedirs (folder_path, exist_ok=True)
@@ -1522,11 +1548,13 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     
                     if len (mesh_children) > 0:
                         for child in mesh_children:
+
+                            child_name = sn(lod_info[child][1])
                                 
-                            prefix = skeletal_mesh_prefix if not child.name.startswith (skeletal_mesh_prefix) else ''
-                            suffix = skeletal_mesh_suffix if not child.name.endswith (skeletal_mesh_suffix) else ''
+                            prefix = skeletal_mesh_prefix if not child_name.startswith (skeletal_mesh_prefix) else ''
+                            suffix = skeletal_mesh_suffix if not child_name.endswith (skeletal_mesh_suffix) else ''
                             
-                            filename = prefix + sn(child.name) + suffix + format
+                            filename = prefix + child_name + suffix + format
                             folder_path = root_folder + meshes_folder
                             filepath = folder_path + filename
                             os.makedirs (folder_path, exist_ok=True)
@@ -1536,20 +1564,27 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                                           
                                     
             elif asset_type == 'ANIMATIONS':
+
+                use_override_character_name = owner.use_anim_object_name_override
+                override_character_name = owner.anim_object_name_override
+
+                character_name = ""
+                if use_override_character_name:
+                    character_name = override_character_name
+                else:
+                    character_name = ori_ao_ori_name
+                character_name = sn(character_name)
+
+                separator = "_" if character_name != "" else ""
                 
                 if action_export_mode == "SCENE":
                     
                     # fbx export settings
                     bake_anim = True
 
-                    use_override_character_name = owner.use_anim_object_name_override
-                    override_character_name = owner.anim_object_name_override
-
-                    name = sn(ori_ao_name) if not use_override_character_name else override_character_name
-                    separator = '_' if not name == '' else ''
                     folder_path = root_folder + anims_folder
                     anim_name = sn(owner.global_anim_name)
-                    filepath = folder_path + animation_prefix + name + separator + anim_name + animation_suffix + format
+                    filepath = folder_path + animation_prefix + name + "_" + anim_name + animation_suffix + format
                     os.makedirs (folder_path, exist_ok=True) 
                     
                     set_animation_name (owner.global_anim_name)
@@ -1562,10 +1597,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     actions_to_export = get_actions_to_export (object = ori_ao)
                     
                     # fbx export settings
-                    bake_anim = True
-                    
-                    use_override_character_name = owner.use_anim_object_name_override
-                    override_character_name = owner.anim_object_name_override   
+                    bake_anim = True  
                     
                     if owner.rig_mode == "AS_IS" and owner.pack_actions:
                         
@@ -1578,11 +1610,9 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                             if action not in actions_to_export:
                                 all_actions.remove(action)
 
-                        name = sn(ori_ao_name) if not use_override_character_name else override_character_name
-                        separator = '_' if not name == '' else ''
                         folder_path = root_folder + anims_folder
                         anim_name = sn(owner.global_anim_name)
-                        filepath = folder_path + animation_prefix + name + separator + anim_name + animation_suffix + format
+                        filepath = folder_path + animation_prefix + character_name + separator + anim_name + animation_suffix + format
                         os.makedirs (folder_path, exist_ok=True) 
 
                         export_objects (filepath, objects = [final_rig] + mesh_children)
@@ -1593,10 +1623,8 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                         for action in actions_to_export:
                             
                             action_name = sn(action.name)
-                            name = sn(ori_ao_name) if not use_override_character_name else override_character_name
-                            separator = '_' if not name == '' else ''
                             folder_path = root_folder + anims_folder
-                            filepath = folder_path + animation_prefix + name + separator + action_name + animation_suffix + format
+                            filepath = folder_path + animation_prefix + character_name + separator + action_name + animation_suffix + format
                             os.makedirs (folder_path, exist_ok=True)
                             
                             set_active_action (action)
@@ -1631,7 +1659,8 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     prefix = prefix_ if not pack_name.startswith(prefix_) else ''                            
                     suffix = suffix_ if not pack_name.startswith(suffix_) else ''                            
                     folder_path = root_folder + "/" + anims_folder
-                    filepath = folder_path + prefix + pack_name + '_' + anim_name + suffix + format
+                    separator = "_" if pack_name != "" else ""
+                    filepath = folder_path + prefix + pack_name + separator + anim_name + suffix + format
                     
                     os.makedirs(folder_path, exist_ok=True) 
                     set_animation_name (anim_name)
@@ -1644,10 +1673,13 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 
                     for obj in ori_sel_objs:
 
+                        obj_name = sn(lod_info[obj][1])
+
                         prefix = prefix_ if not obj.name.startswith(prefix_) else ''
                         suffix = suffix_ if not obj.name.startswith(suffix_) else ''
                         folder_path = root_folder + "/" + anims_folder
-                        filepath = folder_path + prefix + sn(obj.name) + '_' + anim_name + suffix + format 
+                        separator = "_" if obj_name != "" else ""
+                        filepath = folder_path + prefix + obj_name + separator + anim_name + suffix + format 
                         
                         adjust_scene_to_action_length (object = obj)
                         set_animation_name (anim_name)
@@ -1963,18 +1995,18 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     print ('________________________________________________')
                     print ('')
                   
-            return good_to_go, image_info, image_set, lod_info, lods
+            return good_to_go, image_info, image_set, lod_info
         
         
         def checks_plus_main ():
             
-            safe, image_info, image_set, lod_info, lods = content_checks (scene_objects, meshes_to_export)
+            safe, image_info, image_set, lod_info = content_checks (scene_objects, meshes_to_export)
             
             if safe:
                 
                 export_sockets = owner.export_sockets
                 
-                main (asset_type, image_set, ori_ao, ori_ao_name, ori_sel_objs, mesh_children, meshes_to_export, root_folder, pack_objects, action_export_mode, pack_name, lod_info, lods, export_collision, collision_info, export_sockets)
+                main (asset_type, image_set, ori_ao, ori_sel_objs, mesh_children, meshes_to_export, root_folder, pack_objects, action_export_mode, pack_name, lod_info, export_collision, collision_info, export_sockets)
         
             
         ###############################################################
@@ -2026,46 +2058,47 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                             if ori_ao.type == 'ARMATURE':   
                                 if owner.use_anim_object_name_override and is_str_blank(owner.anim_object_name_override):
                                     report (self, 'Object name override is invalid.', 'WARNING')
+                                else:
                                 
-                                if action_export_mode == 'ACTIVE': 
-                                    if getattr (ori_ao, "animation_data") is not None:
-                                        if ori_ao.animation_data.action is not None:
-                                            checks_plus_main ()
+                                    if action_export_mode == 'ACTIVE': 
+                                        if getattr (ori_ao, "animation_data") is not None:
+                                            if ori_ao.animation_data.action is not None:
+                                                checks_plus_main ()
+                                            else:
+                                                report (self, 'Active object has no action assigned to it.', 'WARNING')
                                         else:
-                                            report (self, 'Active object has no action assigned to it.', 'WARNING')
-                                    else:
-                                        report (self, 'Active object has no animation data.', 'WARNING')
+                                            report (self, 'Active object has no animation data.', 'WARNING')
 
-                                        
-                                elif action_export_mode == 'ALL':
-                                    if len (bpy.data.actions) > 0:
-                                        checks_plus_main ()
-                                    else:
-                                        report (self, 'No actions found in this .blend file.', 'WARNING')
-
-                                        
-                                elif action_export_mode == 'BY_NAME':
-                                    items_ok = []
-                                    for item in actions_set_for_export:
-                                        if item.name != '':
-                                            items_ok.append (True)
                                             
-                                    if len (actions_set_for_export) > 0:
-                                        if len (actions_set_for_export) == len (items_ok):
+                                    elif action_export_mode == 'ALL':
+                                        if len (bpy.data.actions) > 0:
                                             checks_plus_main ()
                                         else:
-                                            report (self, 'One or more actions set to be exported are not found', 'WARNING') 
-                                    else:
-                                        report (self, 'No actions are set to be exported.', 'WARNING')
+                                            report (self, 'No actions found in this .blend file.', 'WARNING')
 
-                                elif action_export_mode == "SCENE":
-                                    if getattr (ori_ao, "animation_data") is not None:
-                                        if is_str_blank(owner.global_anim_name):
-                                            report (self, 'Animation name is invalid.', 'WARNING')
+                                            
+                                    elif action_export_mode == 'BY_NAME':
+                                        items_ok = []
+                                        for item in actions_set_for_export:
+                                            if item.name != '':
+                                                items_ok.append (True)
+                                                
+                                        if len (actions_set_for_export) > 0:
+                                            if len (actions_set_for_export) == len (items_ok):
+                                                checks_plus_main ()
+                                            else:
+                                                report (self, 'One or more actions set to be exported are not found', 'WARNING') 
                                         else:
-                                            checks_plus_main ()
-                                    else:
-                                        report (self, 'Active object has no animation data.', 'WARNING')
+                                            report (self, 'No actions are set to be exported.', 'WARNING')
+
+                                    elif action_export_mode == "SCENE":
+                                        if getattr (ori_ao, "animation_data") is not None:
+                                            if is_str_blank(owner.global_anim_name):
+                                                report (self, 'Animation name is invalid.', 'WARNING')
+                                            else:
+                                                checks_plus_main ()
+                                        else:
+                                            report (self, 'Active object has no animation data.', 'WARNING')
                                         
                             else:
                                 report (self, 'Active object is not an armature.', 'WARNING')
@@ -2077,16 +2110,12 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                                     if scene.gyaz_export.root_mode == 'BONE':    
                                         if ori_ao.data.bones.get (root_bone_name) is not None:
                                             checks_plus_main ()
-                                            
                                         else:
                                             report (self, 'Root bone, called "' + root_bone_name + '", not found. Set object as root.', 'WARNING')
-                                            
                                     else:
                                         checks_plus_main ()
-                                    
                                 else:
                                     report (self, "Armature has no mesh children.", 'WARNING')
-                                    
                             else:
                                 report (self, "Active object is not an armature.", 'WARNING')
                                 

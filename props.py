@@ -242,7 +242,7 @@ class PG_GYAZ_ExportProps (PropertyGroup):
     
     export_sockets: BoolProperty (default=True, name='Sockets', description='Sockets need to be parented to the object and only work if a file only contains one object. Prefix: SOCKET_, Example: Object --> SOCKET_anything. Socket (armature) objects are gathered automatically and should not be selected. Scale is ignored')
     
-    export_lods: BoolProperty (default=True, name='LODs', description='Suffix: Obj --> Obj_LOD1, Obj_LOD2 (LOD0 should not have a suffix). LODs are gathered automatically and should not be selected. For Unreal only static mesh LODs are exported.')
+    export_lods: BoolProperty (default=True, name='LODs', description='Suffix: Obj or Obj_LOD0 --> Obj_LOD1, Obj_LOD2. LODs are gathered automatically and should not be selected. For Unreal only static mesh LODs are exported.')
     
     ignore_missing_second_uv_map: BoolProperty (default=False, name='Ignore 2nd UV Check')
     
