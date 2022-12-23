@@ -408,6 +408,8 @@ class SCENE_PT_GYAZ_Export_Mesh (Panel):
                 row.label (icon='BLANK1')
                 row.prop (owner, 'atlas_name', text="")   
 
+            lay.operator("object.gyaz_export_generate_lods", text="Generate LODs")
+
     # when the buttons should show up    
     @classmethod
     def poll(cls, context):
@@ -501,7 +503,7 @@ class SCENE_PT_GYAZ_Export_Extras (Panel):
     def draw (self, context):      
         lay = self.layout     
         lay.operator ('import_scene.fbx', text='Import FBX')
-        
+
         owner = bpy.context.scene.gyaz_export_shapes
         show = owner.show_props
         row = lay.row(align=True)

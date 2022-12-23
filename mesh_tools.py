@@ -332,6 +332,173 @@ class Op_GYAZ_Export_EncodeShapeKeysInUVChannels (Operator):
     def poll(cls, context):
         return context.active_object is not None and context.mode == 'OBJECT'
 
+
+class Op_GYAZ_Export_GenerateLODs (Operator):
+    
+    bl_idname = "object.gyaz_export_generate_lods"  
+    bl_label = "GYAZ Export: Generate LODS"
+    bl_description = ""
+    bl_options = {'REGISTER', 'UNDO'}
+            
+    lod_count: IntProperty(name="LOD Count", default=3, min=1)
+    mode: EnumProperty(
+        name="Mode",
+        items=(
+            ("DECIMATE", "Decimate", ""),
+            ("DECIMATE_PRESERVE_SEAMS", "Decimate Preserving Seams", "")
+        ),
+        default="DECIMATE"
+    )
+    transfer_normals: BoolProperty(name="Transfer Normals", default=False)
+    lod_spacing: FloatProperty(name="Spacing", default=.2, min=0, description="Spacing between LOD objects")
+    offset_axis: EnumProperty(
+        name="Axis",
+        items=(
+            ("X", "X", ""),
+            ("Y", "Y", ""),
+            ("Z", "Z", ""),
+            ("NONE", "None", "")
+        ),
+        default="X"
+    )
+    suffix_lod0: BoolProperty(name="Suffix LOD0", default=False)
+
+    def draw (self, context):
+        lay = self.layout
+        lay.prop(self, 'lod_count')
+        lay.prop(self, 'mode')
+        lay.prop(self, 'transfer_normals')
+        lay.prop(self, 'lod_spacing')
+        row = lay.row()
+        row.label(text="Axis:")
+        row.prop(self, 'offset_axis', expand=True)
+        lay.prop(self, 'suffix_lod0')
+
+    # popup with properties
+    def invoke(self, context, event):
+        wm = bpy.context.window_manager
+        return wm.invoke_props_dialog(self)
+
+    # operator function
+    def execute(self, context):
+    
+        data_prefix = "GYAZExporterLOD_"
+
+        scene = bpy.context.scene
+        obj = bpy.context.object
+
+        obj_name = obj.name
+        if obj_name.endswith("_LOD0"):
+            obj_name = obj_name[:-5]
+        elif self.suffix_lod0:
+            obj.name = obj.name + "_LOD0"
+
+        seam_vert_group_name = None
+
+        lod_collection_name = obj_name + "_LODs"
+        lod_collection_parent = None
+
+        obj_collections = obj.users_collection
+        if len(obj_collections) > 0:
+            lod_collection_parent = obj_collections[-1]
+        else:
+            lod_collection_parent = scene.collection
+            
+        lod_collection = lod_collection_parent.children.get(lod_collection_name)
+        if lod_collection is None:
+            lod_collection = bpy.data.collections.new(name=lod_collection_name)
+            lod_collection_parent.children.link(lod_collection)
+        for lod_obj in lod_collection.objects:
+            lod_obj.name = ""
+            lod_collection.objects.unlink(lod_obj)
+
+        if self.mode == "DECIMATE_PRESERVE_SEAMS":
+            
+            seam_vert_group_name = data_prefix + "Seams"
+            seam_vert_group = obj.vertex_groups.get(seam_vert_group_name)
+            if seam_vert_group is None:
+                seam_vert_group = obj.vertex_groups.new(name=seam_vert_group_name)
+            else:
+                obj.vertex_groups[seam_vert_group_name].remove([i for i in range(0, len(obj.data.vertices))])
+
+            bm = bmesh.new()
+            bm.from_mesh(obj.data)
+
+            seam_vert_indices = []
+            for vert_idx, vert in enumerate(bm.verts):
+                for connected_edge in vert.link_edges:
+                    if connected_edge.seam:
+                        seam_vert_indices.append(vert_idx)
+                        break
+            
+            bm.free()
+
+            seam_vert_group.add(seam_vert_indices, 1.0, "ADD")    
+
+        for lod_idx in range(1, self.lod_count + 1):
+
+            lod_obj = obj.copy()
+
+            lod_collection.objects.link(lod_obj)
+
+            lod_obj.name = obj_name + "_LOD" + str(lod_idx)
+            lod_obj.show_wire = True
+            lod_obj.show_all_edges = True
+            obj_loc = obj.location
+            if self.offset_axis == "X":
+                offset = obj.dimensions[0] * lod_idx + self.lod_spacing * lod_idx
+                lod_obj.location = (obj_loc[0] + offset, obj_loc[1], obj_loc[2])
+            if self.offset_axis == "Y":
+                offset = obj.dimensions[1] * lod_idx + self.lod_spacing * lod_idx
+                lod_obj.location = (obj_loc[0], obj_loc[1] + offset, obj_loc[2])
+            if self.offset_axis == "Z":
+                offset = obj.dimensions[2] * lod_idx + self.lod_spacing * lod_idx
+                lod_obj.location = (obj_loc[0], obj_loc[1], obj_loc[2] + offset)
+
+            m = lod_obj.modifiers.new(name=data_prefix+"EdgeSplit", type="EDGE_SPLIT")
+            m.use_edge_angle = False
+            
+            m = lod_obj.modifiers.new(name=data_prefix+"Decimate", type="DECIMATE")
+            ratio = 1.0
+            for x in range(0, lod_idx):
+                ratio /= 2
+            m.ratio = ratio
+            m.use_collapse_triangulate = True
+            if self.mode == "DECIMATE_PRESERVE_SEAMS":
+                m.vertex_group = seam_vert_group_name
+                m.invert_vertex_group = True
+
+                m = lod_obj.modifiers.new(name=data_prefix+"DecimateSeams", type="DECIMATE")
+                m.ratio = 1.0
+                m.use_collapse_triangulate = True
+                m.vertex_group = seam_vert_group_name
+                m.invert_vertex_group = False
+            
+            if self.transfer_normals:
+                m = lod_obj.modifiers.new(name=data_prefix+"TransferNormals", type="DATA_TRANSFER")
+                m.use_object_transform = False
+                m.object = obj
+                m.use_loop_data = True
+                m.data_types_loops = {"CUSTOM_NORMAL"}
+                m.loop_mapping = "NEAREST_POLYNOR"
+                m.show_viewport = False
+                m.show_render = False
+
+            # focus on all objects in viewport
+            for area in bpy.context.screen.areas:
+                if area.type == 'VIEW_3D':
+                    ctx = bpy.context.copy()
+                    ctx['area'] = area
+                    ctx['region'] = area.regions[-1]
+                    bpy.ops.view3d.view_selected(ctx)  
+
+        return {'FINISHED'}
+    
+    #when the buttons should show up    
+    @classmethod
+    def poll(cls, context):
+        return context.active_object is not None and context.mode == 'OBJECT'
+
     
 # mesh props
 class PG_GYAZ_Export_MeshProps (PropertyGroup):
@@ -349,6 +516,7 @@ def register():
     Scene.gyaz_export_shapes = PointerProperty (type=PG_GYAZ_Export_EncodeShapeKeysInUVChannel)
     
     bpy.utils.register_class (Op_GYAZ_Export_EncodeShapeKeysInUVChannels)
+    bpy.utils.register_class (Op_GYAZ_Export_GenerateLODs)
 
 
 def unregister():
@@ -359,4 +527,5 @@ def unregister():
     del Scene.gyaz_export_shapes
     
     bpy.utils.unregister_class (Op_GYAZ_Export_EncodeShapeKeysInUVChannels)
+    bpy.utils.unregister_class (Op_GYAZ_Export_GenerateLODs)
     
