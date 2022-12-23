@@ -20,7 +20,7 @@
 ##########################################################################################################
 ##########################################################################################################
 
-import bpy, bmesh
+import bpy, bmesh, math
 from bpy.props import *
 from bpy.types import Operator, PropertyGroup, Mesh, Scene
 from mathutils import Vector
@@ -362,6 +362,7 @@ class Op_GYAZ_Export_GenerateLODs (Operator):
         default="X"
     )
     suffix_lod0: BoolProperty(name="Suffix LOD0", default=False)
+    focus_view: BoolProperty(name="Focus View", default=True)
 
     def draw (self, context):
         lay = self.layout
@@ -373,6 +374,7 @@ class Op_GYAZ_Export_GenerateLODs (Operator):
         row.label(text="Axis:")
         row.prop(self, 'offset_axis', expand=True)
         lay.prop(self, 'suffix_lod0')
+        lay.prop(self, 'focus_view')
 
     # popup with properties
     def invoke(self, context, event):
@@ -475,22 +477,24 @@ class Op_GYAZ_Export_GenerateLODs (Operator):
                 m.invert_vertex_group = False
             
             if self.transfer_normals:
+                if not lod_obj.data.use_auto_smooth:
+                    lod_obj.data.auto_smooth_angle = math.pi
+                lod_obj.data.use_auto_smooth = True
                 m = lod_obj.modifiers.new(name=data_prefix+"TransferNormals", type="DATA_TRANSFER")
                 m.use_object_transform = False
                 m.object = obj
                 m.use_loop_data = True
                 m.data_types_loops = {"CUSTOM_NORMAL"}
                 m.loop_mapping = "NEAREST_POLYNOR"
-                m.show_viewport = False
-                m.show_render = False
 
             # focus on all objects in viewport
-            for area in bpy.context.screen.areas:
-                if area.type == 'VIEW_3D':
-                    ctx = bpy.context.copy()
-                    ctx['area'] = area
-                    ctx['region'] = area.regions[-1]
-                    bpy.ops.view3d.view_selected(ctx)  
+            if self.focus_view:
+                for area in bpy.context.screen.areas:
+                    if area.type == 'VIEW_3D':
+                        ctx = bpy.context.copy()
+                        ctx['area'] = area
+                        ctx['region'] = area.regions[-1]
+                        bpy.ops.view3d.view_selected(ctx)  
 
         return {'FINISHED'}
     
