@@ -1,10 +1,28 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
 
 public class CollisionAssetPostprocessor : AssetPostprocessor
 {
+    private struct AxisScaleInfo
+    {
+        public float scale;
+        public int axis;
+
+        public AxisScaleInfo(float value, int axis)
+        {
+            this.scale = value;
+            this.axis = axis;
+        }
+
+        public static int Compare(AxisScaleInfo a, AxisScaleInfo b)
+        {
+            return a.scale.CompareTo(b.scale);
+        }
+    }
+
     public void OnPostprocessModel(GameObject gameObject)
     {
         Debug.Log("CollisionAssetPostprocessor started");
@@ -55,6 +73,10 @@ public class CollisionAssetPostprocessor : AssetPostprocessor
         else if (meshName.StartsWith("UCP_"))
         {
             CapsuleCollider capsuleCollider = t.parent.gameObject.AddComponent<CapsuleCollider>();
+            GetCapsuleDimensions(t, out float height, out float radius, out int axis);
+            capsuleCollider.height = height;
+            capsuleCollider.radius = radius;
+            capsuleCollider.direction = axis;
             transformsToDestroy.Add(t);
         }
         else if (meshName.StartsWith("UCX_"))
@@ -67,5 +89,24 @@ public class CollisionAssetPostprocessor : AssetPostprocessor
             }
             transformsToDestroy.Add(t);
         }
+    }
+
+    void GetCapsuleDimensions(Transform t, out float height, out float radius, out int axis)
+    {
+        Vector3 scale = t.localScale;
+        AxisScaleInfo[] axisScaleInfos = {
+            new AxisScaleInfo(scale.x, 0),
+            new AxisScaleInfo(scale.y, 1),
+            new AxisScaleInfo(scale.z, 2)
+        };
+        
+        Array.Sort(axisScaleInfos, AxisScaleInfo.Compare);
+
+        AxisScaleInfo longestAxis = axisScaleInfos[2];
+        AxisScaleInfo secondLongestAxis = axisScaleInfos[1];
+
+        height = longestAxis.scale;
+        radius = secondLongestAxis.scale * .5f;
+        axis = longestAxis.axis;
     }
 }
