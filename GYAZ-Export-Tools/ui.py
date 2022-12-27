@@ -410,6 +410,52 @@ class SCENE_PT_GYAZ_Export_Mesh (Panel):
 
             lay.operator("object.gyaz_export_generate_lods", text="Generate LODs")
 
+            lay.label(text="Collision:")
+            row = lay.row(align=True)
+            row.operator("object.gyaz_export_add_collision", text="Box").shape = "BOX"
+            row.operator("object.gyaz_export_add_collision", text="Sphere").shape = "SPHERE"
+
+            owner = bpy.context.scene.gyaz_export_shapes
+            show = owner.show_props
+            row = lay.row(align=True)
+            row.prop (owner, 'show_props', icon='TRIA_DOWN' if show else 'TRIA_RIGHT', text="", emboss=False)
+            row.label (text='Shape Keys in UVs')
+            if show:
+                lay.prop (owner, 'encode_normals')
+                col = lay.column (align=True)
+                col.label (text='Base:')
+                col.prop (owner, 'base_mesh', text='')
+                col = lay.column (align=True)
+                col.label (text='Shape 1:')
+                col.prop (owner, 'shape_key_mesh_1', text='')
+                col = lay.column (align=True)
+                col.label (text='Shape 2:')
+                col.prop (owner, 'shape_key_mesh_2', text='')
+                if not owner.encode_normals:
+                    col = lay.column (align=True)
+                    col.label (text='Shape 3:')
+                    col.prop (owner, 'shape_key_mesh_3', text='')   
+                    col = lay.column (align=True)
+                    col.label (text='Shape 4:')
+                    col.prop (owner, 'shape_key_mesh_4', text='')
+                    col = lay.column (align=True)
+                    col.label (text='Shape 5:')
+                    col.prop (owner, 'shape_key_mesh_5', text='')
+                else:
+                    col = lay.column (align=True)
+                    col.label (text='Shape 3 (No Normals):')
+                    col.prop (owner, 'shape_key_mesh_3', text='')            
+                col = lay.column (align=True)
+                col.label (text='Shape Normal To Vert Color:')
+                col.prop (owner, 'shape_nor_to_vert_col', text='')
+                lay.separator ()
+                lay.operator ('object.gyaz_export_encode_shape_keys_in_uv_channels', text='Encode', icon='SHAPEKEY_DATA')
+                lay.separator ()
+                row = lay.row (align=True)
+                row.scale_y = 2
+                row.operator ('object.gyaz_export_export', text='EXPORT', icon='EXPORT')
+                row.operator ('object.gyaz_export_select_file_in_explorer', text='', icon='VIEWZOOM').path=bpy.context.scene.gyaz_export.path_to_last_export
+
     # when the buttons should show up    
     @classmethod
     def poll(cls, context):
@@ -503,47 +549,6 @@ class SCENE_PT_GYAZ_Export_Extras (Panel):
     def draw (self, context):      
         lay = self.layout     
         lay.operator ('import_scene.fbx', text='Import FBX')
-
-        owner = bpy.context.scene.gyaz_export_shapes
-        show = owner.show_props
-        row = lay.row(align=True)
-        row.prop (owner, 'show_props', icon='TRIA_DOWN' if show else 'TRIA_RIGHT', text="", emboss=False)
-        row.label (text='Shape Keys in UVs')
-        if show:
-            lay.prop (owner, 'encode_normals')
-            col = lay.column (align=True)
-            col.label (text='Base:')
-            col.prop (owner, 'base_mesh', text='')
-            col = lay.column (align=True)
-            col.label (text='Shape 1:')
-            col.prop (owner, 'shape_key_mesh_1', text='')
-            col = lay.column (align=True)
-            col.label (text='Shape 2:')
-            col.prop (owner, 'shape_key_mesh_2', text='')
-            if not owner.encode_normals:
-                col = lay.column (align=True)
-                col.label (text='Shape 3:')
-                col.prop (owner, 'shape_key_mesh_3', text='')   
-                col = lay.column (align=True)
-                col.label (text='Shape 4:')
-                col.prop (owner, 'shape_key_mesh_4', text='')
-                col = lay.column (align=True)
-                col.label (text='Shape 5:')
-                col.prop (owner, 'shape_key_mesh_5', text='')
-            else:
-                col = lay.column (align=True)
-                col.label (text='Shape 3 (No Normals):')
-                col.prop (owner, 'shape_key_mesh_3', text='')            
-            col = lay.column (align=True)
-            col.label (text='Shape Normal To Vert Color:')
-            col.prop (owner, 'shape_nor_to_vert_col', text='')
-            lay.separator ()
-            lay.operator ('object.gyaz_export_encode_shape_keys_in_uv_channels', text='Encode', icon='SHAPEKEY_DATA')
-            lay.separator ()
-            row = lay.row (align=True)
-            row.scale_y = 2
-            row.operator ('object.gyaz_export_export', text='EXPORT', icon='EXPORT')
-            row.operator ('object.gyaz_export_select_file_in_explorer', text='', icon='VIEWZOOM').path=bpy.context.scene.gyaz_export.path_to_last_export
 
 
 def register():

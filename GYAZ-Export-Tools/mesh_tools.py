@@ -24,12 +24,8 @@ import bpy, bmesh, math
 from bpy.props import *
 from bpy.types import Operator, PropertyGroup, Mesh, Scene
 from mathutils import Vector
+from .utils import report, delete_object
 
-
-# report
-def report (self, item, error_or_info):
-    self.report({error_or_info}, item)
-    
 
 class PG_GYAZ_Export_EncodeShapeKeysInUVChannel (PropertyGroup):
 
@@ -411,8 +407,8 @@ class Op_GYAZ_Export_GenerateLODs (Operator):
             lod_collection = bpy.data.collections.new(name=lod_collection_name)
             lod_collection_parent.children.link(lod_collection)
         for lod_obj in lod_collection.objects:
-            lod_obj.name = ""
             lod_collection.objects.unlink(lod_obj)
+            delete_object(lod_obj)
 
         if self.mode == "DECIMATE_PRESERVE_SEAMS":
             

@@ -20,14 +20,8 @@
 ##########################################################################################################
 ##########################################################################################################
 
-import bpy, os, subprocess, bmesh
-from bpy.types import Operator
+import bpy, os, subprocess
 from bpy.props import *
-from mathutils import Vector
-
-
-def report (self, item, error_or_info):
-    self.report({error_or_info}, item)
 
 
 class Op_GYAZ_Export_SelectFileInWindowsFileExplorer (bpy.types.Operator):

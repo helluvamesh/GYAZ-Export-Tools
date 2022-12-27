@@ -201,7 +201,7 @@ register()
 
 
  
-modulesNames = ['props', 'mesh_tools', 'ops', 'main_op', 'ui']
+modulesNames = ['props', 'mesh_tools', 'ops', 'main_op', 'collision', 'ui']
  
 import sys
 import importlib
