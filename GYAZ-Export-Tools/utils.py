@@ -112,3 +112,8 @@ def reset_all_pose_bones(rig):
 
 def delete_object(obj):
     bpy.data.objects.remove(obj, do_unlink=True)
+
+
+def clear_blender_collection(collection):
+    for item in collection:
+        collection.remove(item)

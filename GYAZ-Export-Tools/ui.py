@@ -70,79 +70,76 @@ class SCENE_PT_GYAZ_Export_Bones (Panel):
             owner = scene.gyaz_export
             
             col = lay.column (align=True)
-            col.label (text="Rig Mode:")
-            col.row().prop (owner, "rig_mode", expand=True)
-            if (owner.rig_mode == "BUILD"):
-                col.label (text='Bone Presets:')
-                row = col.row (align=True)
-                row.prop (owner, "active_preset", text='')
-                row.operator ('object.gyaz_export_save_preset', text='', icon='ADD')
-                row.operator ('object.gyaz_export_remove_preset', text='', icon='REMOVE')
-                
-                col = lay.column (align=True)
-                col.use_property_split = True
-                col.use_property_decorate = False
-                col.prop (owner, 'root_mode')
-                if owner.root_mode == 'BONE':
-                    col.prop_search (owner, 'root_bone_name', rig.data, "bones", icon='BONE_DATA', text='Bone')
-                col = lay.column (align=True)
-                row = col.row (align=True)
-                row.label (text='Extra Bones:')
-                row.prop (owner, "extra_bones")
+            col.label (text='Bone Presets:')
+            row = col.row (align=True)
+            row.prop (owner, "active_preset", text='')
+            row.operator ('object.gyaz_export_save_preset', text='', icon='ADD')
+            row.operator ('object.gyaz_export_remove_preset', text='', icon='REMOVE')
+            
+            col = lay.column (align=True)
+            col.use_property_split = True
+            col.use_property_decorate = False
+            col.prop (owner, 'root_mode')
+            if owner.root_mode == 'BONE':
+                col.prop_search (owner, 'root_bone_name', rig.data, "bones", icon='BONE_DATA', text='Bone')
+            col = lay.column (align=True)
+            row = col.row (align=True)
+            row.label (text='Extra Bones:')
+            row.prop (owner, "extra_bones")
+            if len (owner.extra_bones) > 0:
+                col.prop (owner, 'constraint_extra_bones')
+                col.prop (owner, 'rename_vert_groups_to_extra_bones')
+                col.prop (owner, 'extra_bones_long_rows')
+            extra_bones = owner.extra_bones
+            col = lay.column (align=True)
+            row = col.row (align=True)
+            row.operator ('object.gyaz_export_functions', text='', icon='ADD').ui_mode = 'ADD_TO_EXTRA_BONES'
+            row.operator ('object.gyaz_export_remove_item_from_extra_bones', text='', icon='REMOVE')
+            row.separator ()
+            op = row.operator ('object.gyaz_export_move_extra_bone_item', text='', icon='TRIA_UP').mode = 'UP'
+            op = row.operator ('object.gyaz_export_move_extra_bone_item', text='', icon='TRIA_DOWN').mode = 'DOWN'
+            row.separator ()
+            row.operator ('object.gyaz_export_functions', text='', icon='X').ui_mode = 'REMOVE_ALL_FROM_EXTRA_BONES'
+            row.separator ()
+            row.operator ('object.gyaz_export_read_selected_pose_bones', text='', icon='EYEDROPPER').mode='EXTRA_BONES'
+            if len (owner.extra_bones) > 0:
+                index = owner.extra_bones_active_index
+                item = extra_bones[index]
                 if len (owner.extra_bones) > 0:
-                    col.prop (owner, 'constraint_extra_bones')
-                    col.prop (owner, 'rename_vert_groups_to_extra_bones')
-                    col.prop (owner, 'extra_bones_long_rows')
-                extra_bones = owner.extra_bones
-                col = lay.column (align=True)
-                row = col.row (align=True)
-                row.operator ('object.gyaz_export_functions', text='', icon='ADD').ui_mode = 'ADD_TO_EXTRA_BONES'
-                row.operator ('object.gyaz_export_remove_item_from_extra_bones', text='', icon='REMOVE')
-                row.separator ()
-                op = row.operator ('object.gyaz_export_move_extra_bone_item', text='', icon='TRIA_UP').mode = 'UP'
-                op = row.operator ('object.gyaz_export_move_extra_bone_item', text='', icon='TRIA_DOWN').mode = 'DOWN'
-                row.separator ()
-                row.operator ('object.gyaz_export_functions', text='', icon='X').ui_mode = 'REMOVE_ALL_FROM_EXTRA_BONES'
-                row.separator ()
-                row.operator ('object.gyaz_export_read_selected_pose_bones', text='', icon='EYEDROPPER').mode='EXTRA_BONES'
-                if len (owner.extra_bones) > 0:
-                    index = owner.extra_bones_active_index
-                    item = extra_bones[index]
-                    if len (owner.extra_bones) > 0:
-                        lay.template_list ("UI_UL_GYAZ_ExtraBones", "",  # type and unique id
-                            owner, "extra_bones",  # pointer to the CollectionProperty
-                            owner, "extra_bones_active_index",  # pointer to the active identifier
-                            rows = 1, maxrows = 1)
-                        col = lay.column (align=True)
-                        if not owner.extra_bones_long_rows:
-                            col.label (text='Source, Parent:')
-                            col = col.column (align=True)
-                            row = col.row (align=True)
-                            row.prop_search (item, "source", rig.data, "bones", icon='GROUP_BONE')
-                            row.operator ('object.gyaz_export_set_source_as_active_bone', text='', icon='EYEDROPPER').ui_index = index
-                            row = col.row (align=True)
-                            row.prop (item, "parent", text='', icon='NODETREE')
-                            row.operator ('object.gyaz_export_set_parent_as_active_bone', text='', icon='EYEDROPPER').ui_index = index
-                        else:
-                            col.label (text='(New Name, Parent, Source)')          
+                    lay.template_list ("UI_UL_GYAZ_ExtraBones", "",  # type and unique id
+                        owner, "extra_bones",  # pointer to the CollectionProperty
+                        owner, "extra_bones_active_index",  # pointer to the active identifier
+                        rows = 1, maxrows = 1)
+                    col = lay.column (align=True)
+                    if not owner.extra_bones_long_rows:
+                        col.label (text='Source, Parent:')
+                        col = col.column (align=True)
+                        row = col.row (align=True)
+                        row.prop_search (item, "source", rig.data, "bones", icon='GROUP_BONE')
+                        row.operator ('object.gyaz_export_set_source_as_active_bone', text='', icon='EYEDROPPER').ui_index = index
+                        row = col.row (align=True)
+                        row.prop (item, "parent", text='', icon='NODETREE')
+                        row.operator ('object.gyaz_export_set_parent_as_active_bone', text='', icon='EYEDROPPER').ui_index = index
+                    else:
+                        col.label (text='(New Name, Parent, Source)')          
 
-                col = lay.column (align=True)            
+            col = lay.column (align=True)            
+            row = col.row (align=True)
+            row.label (text='Export Bones:')
+            row.prop (owner, "export_bones")
+            col.prop (owner, "export_all_bones")
+            col.separator ()
+            if not owner.export_all_bones:
                 row = col.row (align=True)
-                row.label (text='Export Bones:')
-                row.prop (owner, "export_bones")
-                col.prop (owner, "export_all_bones")
-                col.separator ()
-                if not owner.export_all_bones:
-                    row = col.row (align=True)
-                    row.operator ('object.gyaz_export_functions', text='', icon='ADD').ui_mode = 'ADD_TO_EXPORT_BONES'
-                    row.operator ('object.gyaz_export_functions', text='', icon='X').ui_mode = 'REMOVE_ALL_FROM_EXPORT_BONES'
-                    row.separator ()
-                    row.operator ('object.gyaz_export_read_selected_pose_bones', text='', icon='EYEDROPPER').mode='EXPORT_BONES'
-                    row.separator ()
-                    lay.template_list ("UI_UL_GYAZ_ExportBones", "",  # type and unique id
-                        owner, "export_bones",  # pointer to the CollectionProperty
-                        owner, "export_bones_active_index",  # pointer to the active identifier
-                        rows = 1, maxrows = 1)        
+                row.operator ('object.gyaz_export_functions', text='', icon='ADD').ui_mode = 'ADD_TO_EXPORT_BONES'
+                row.operator ('object.gyaz_export_functions', text='', icon='X').ui_mode = 'REMOVE_ALL_FROM_EXPORT_BONES'
+                row.separator ()
+                row.operator ('object.gyaz_export_read_selected_pose_bones', text='', icon='EYEDROPPER').mode='EXPORT_BONES'
+                row.separator ()
+                lay.template_list ("UI_UL_GYAZ_ExportBones", "",  # type and unique id
+                    owner, "export_bones",  # pointer to the CollectionProperty
+                    owner, "export_bones_active_index",  # pointer to the active identifier
+                    rows = 1, maxrows = 1)        
 
     # when the buttons should show up    
     @classmethod
@@ -311,7 +308,7 @@ class SCENE_PT_GYAZ_Export (Panel):
             if owner.action_export_mode == "SCENE":
                 col.label (text="Animation Name:")
                 col.prop (owner, "global_anim_name", text="")
-            elif owner.rig_mode == "AS_IS":
+            else:
                 col.prop (owner, "pack_actions")
                 if owner.pack_actions:
                     row = col.row(align=True)

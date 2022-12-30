@@ -94,16 +94,6 @@ class PG_GYAZ_ExportProps (PropertyGroup):
         return [(preset.preset_name, preset.preset_name, "") for preset in prefs.bone_presets]
          
     active_preset: EnumProperty (name = 'Active Preset', items = get_preset_names, default = None, update=load_active_preset)    
-    
-    rig_mode: EnumProperty(
-        name="Rig Mode",
-        items=(
-            ("AS_IS", "AS IS", ""),
-            ("BUILD", "BUILD RIG", "")
-        ),
-        default="AS_IS",
-        description="AS_IS: Leave the rig alone, BUILD: Build a new simplified rig"
-    )
 
     root_mode: EnumProperty (name='Root Mode', 
                              items=(('BONE', 'Bone', ''), 
