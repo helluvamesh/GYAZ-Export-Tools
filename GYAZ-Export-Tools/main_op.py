@@ -637,12 +637,12 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 final_rig_data = ori_ao.data.copy ()
                 
                 # create new armature object
-                final_rig = bpy.data.objects.new (name=root_bone_name, object_data=final_rig_data)
+                final_rig = bpy.data.objects.new (name="Armature", object_data=final_rig_data)
                 scene.collection.objects.link (final_rig)
                 make_active_only (final_rig)
-                # renaming just once may not be enough
-                final_rig.name = root_bone_name
-                final_rig.name = root_bone_name
+
+                final_rig.name = "Armature"
+                final_rig.name = "Armature"
                 final_rig.rotation_mode = "QUATERNION"
                 
                 # remove drivers
@@ -670,7 +670,18 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     ebone.roll = item['roll']
                         
                 for item in extra_bone_info:    
-                    set_bone_parent (item['name'], item['parent'] )    
+                    set_bone_parent (item['name'], item['parent'] )  
+
+                # create root bone
+                root_ebone = final_rig.data.edit_bones.new (name=root_bone_name)
+                if target_y_up_z_forward:
+                    root_ebone.tail = (0, 0, -.1)
+                else:
+                    root_ebone.tail = (0, .1, 0)
+                root_ebone.roll = 0
+                for ebone in final_rig.data.edit_bones:
+                    if ebone.parent is None:
+                        ebone.parent = root_ebone
                     
                 # delete constraints
                 bpy.ops.object.mode_set (mode='POSE')
@@ -703,25 +714,84 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     child.parent_type = 'ARMATURE'
                 
                 # constraint final rig to the original armature    
-                make_active_only (final_rig)
-                bpy.ops.object.mode_set (mode='POSE')
-                
-                def constraint_bones (source_bone, target_bone, source_obj, target_obj):
-                    pbones = target_obj.pose.bones
-                    pbone = pbones[target_bone]
+                if asset_type == "ANIMATIONS":
 
-                    c = pbone.constraints.new (type='COPY_LOCATION')
-                    c.target = source_obj
-                    c.subtarget = source_bone
+                    make_active_only (final_rig)
+                    bpy.ops.object.mode_set (mode='POSE')
                     
-                    c = pbone.constraints.new (type='COPY_ROTATION')
-                    c.target = source_obj
-                    c.subtarget = source_bone
-                    
-                    if target_cm_scale_unit:
-                        c = pbone.constraints.new (type='TRANSFORM')
+                    def constraint_bones (source_bone, target_bone, source_obj, target_obj):
+                        pbones = target_obj.pose.bones
+                        pbone = pbones[target_bone]
+
+                        c = pbone.constraints.new (type='COPY_LOCATION')
                         c.target = source_obj
                         c.subtarget = source_bone
+                        
+                        c = pbone.constraints.new (type='COPY_ROTATION')
+                        c.target = source_obj
+                        c.subtarget = source_bone
+                        
+                        if target_cm_scale_unit:
+                            c = pbone.constraints.new (type='TRANSFORM')
+                            c.target = source_obj
+                            c.subtarget = source_bone
+                            c.use_motion_extrapolate = True
+                            c.map_from = 'SCALE'
+                            c.map_to = 'SCALE'
+                            c.map_to_x_from = 'X'
+                            c.map_to_y_from = 'Y'
+                            c.map_to_z_from = 'Z'
+                            c.from_min_x_scale = -1
+                            c.from_max_x_scale = 1
+                            c.from_min_y_scale = -1
+                            c.from_max_y_scale = 1
+                            c.from_min_z_scale = -1
+                            c.from_max_z_scale = 1
+                            c.to_min_x_scale = -0.01
+                            c.to_max_x_scale = 0.01
+                            c.to_min_y_scale = -0.01
+                            c.to_max_y_scale = 0.01
+                            c.to_min_z_scale = -0.01
+                            c.to_max_z_scale = 0.01
+                        else:
+                            c = pbone.constraints.new (type='COPY_SCALE')
+                            c.target = source_obj
+                            c.subtarget = source_bone
+                
+                    # constraint 'export bones'        
+                    for name in export_bone_list:
+                        constraint_bones (name, name, ori_ao, final_rig)
+                    
+                    # constraint 'extra bones'
+                    if constraint_extra_bones:                                                                                     
+                        for item in scene.gyaz_export.extra_bones:
+                            new_name = item.name
+                            source_name = item.source
+                            parent_name = item.parent     
+                            constraint_bones (source_name, new_name, ori_ao, final_rig)            
+                    
+                    # constraint root
+                    if root_mode == 'BONE':
+                        if ori_ao.data.bones.get (root_bone_name) is not None:
+                            subtarget = root_bone_name 
+                    else:
+                        subtarget = ''
+
+                    root_pbone = final_rig.pose.bones[root_bone_name]
+                    c = root_pbone.constraints.new (type='COPY_LOCATION')
+                    c.target = ori_ao
+                    c.subtarget = subtarget
+                    
+                    c = root_pbone.constraints.new (type='COPY_ROTATION')
+                    c.target = ori_ao
+                    c.subtarget = subtarget
+                    c.owner_space = "LOCAL"
+                    c.target_space = "LOCAL_OWNER_ORIENT"
+                    
+                    if target_cm_scale_unit:
+                        c = root_pbone.constraints.new (type='TRANSFORM')
+                        c.target = ori_ao
+                        c.subtarget = subtarget
                         c.use_motion_extrapolate = True
                         c.map_from = 'SCALE'
                         c.map_to = 'SCALE'
@@ -741,64 +811,9 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                         c.to_min_z_scale = -0.01
                         c.to_max_z_scale = 0.01
                     else:
-                        c = pbone.constraints.new (type='COPY_SCALE')
-                        c.target = source_obj
-                        c.subtarget = source_bone
-            
-                # constraint 'export bones'        
-                for name in export_bone_list:
-                    constraint_bones (name, name, ori_ao, final_rig)
-                
-                # constraint 'extra bones'
-                if constraint_extra_bones:                                                                                     
-                    for item in scene.gyaz_export.extra_bones:
-                        new_name = item.name
-                        source_name = item.source
-                        parent_name = item.parent     
-                        constraint_bones (source_name, new_name, ori_ao, final_rig)            
-                
-                # constraint root 
-                if root_mode == 'BONE':
-                    if ori_ao.data.bones.get (root_bone_name) is not None:
-                        subtarget = root_bone_name 
-                else:
-                    subtarget = ''           
-                    
-                c = final_rig.constraints.new (type='COPY_LOCATION')
-                c.target = ori_ao
-                c.subtarget = subtarget
-                
-                c = final_rig.constraints.new (type='COPY_ROTATION')
-                c.target = ori_ao
-                c.subtarget = subtarget
-                c.target_space = "LOCAL"
-                
-                if target_cm_scale_unit:
-                    c = final_rig.constraints.new (type='TRANSFORM')
-                    c.target = ori_ao
-                    c.subtarget = subtarget
-                    c.use_motion_extrapolate = True
-                    c.map_from = 'SCALE'
-                    c.map_to = 'SCALE'
-                    c.map_to_x_from = 'X'
-                    c.map_to_y_from = 'Y'
-                    c.map_to_z_from = 'Z'
-                    c.from_min_x_scale = -1
-                    c.from_max_x_scale = 1
-                    c.from_min_y_scale = -1
-                    c.from_max_y_scale = 1
-                    c.from_min_z_scale = -1
-                    c.from_max_z_scale = 1
-                    c.to_min_x_scale = -0.01
-                    c.to_max_x_scale = 0.01
-                    c.to_min_y_scale = -0.01
-                    c.to_max_y_scale = 0.01
-                    c.to_min_z_scale = -0.01
-                    c.to_max_z_scale = 0.01
-                else:
-                    c = final_rig.constraints.new (type='COPY_SCALE')
-                    c.target = ori_ao
-                    c.subtarget = subtarget
+                        c = final_rig.constraints.new (type='COPY_SCALE')
+                        c.target = ori_ao
+                        c.subtarget = subtarget
                 
                 # rename vert groups to match extra bone names
                 if rename_vert_groups_to_extra_bones:   
@@ -1217,23 +1232,22 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             
                 actions_names = scene.gyaz_export.actions
                 
-                def set_active_action (action):
-                    if getattr (ori_ao, "animation_data") == None:
-                        ori_ao.animation_data_create ()
+                def set_active_action (obj, action):
+                    if getattr (obj, "animation_data") == None:
+                        obj.animation_data_create ()
                     
-                    reset_all_pose_bones(ori_ao)
-                    ori_ao.animation_data.action = action
+                    reset_all_pose_bones(obj)
+                    obj.animation_data.action = action
 
 
                 def bake_actions (actions):
                     baked_actions = []
                     for action in actions:
                         make_active_only (ori_ao)
-                        set_active_action (action)
+                        set_active_action (ori_ao, action)
                         adjust_scene_to_action_length (ori_ao)
                         make_active_only (final_rig)
                         bpy.ops.nla.bake (frame_start=scene.frame_start, frame_end=scene.frame_end, only_selected=False, visual_keying=True, clear_constraints=False, clear_parents=False, use_current_action=False, bake_types={'POSE'})
-                        bpy.ops.nla.bake (frame_start=scene.frame_start, frame_end=scene.frame_end, only_selected=False, visual_keying=True, clear_constraints=False, clear_parents=False, use_current_action=True, bake_types={'OBJECT'})
                         new_action = get_active_action (final_rig)
                         action_name = action.name
                         action.name = old_action_prefix + action_name
@@ -1246,7 +1260,6 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 def bake_action_from_scene (new_action_name):
                     make_active_only (final_rig)
                     bpy.ops.nla.bake (frame_start=scene.frame_start, frame_end=scene.frame_end, only_selected=False, visual_keying=True, clear_constraints=False, clear_parents=False, use_current_action=False, bake_types={'POSE'})
-                    bpy.ops.nla.bake (frame_start=scene.frame_start, frame_end=scene.frame_end, only_selected=False, visual_keying=True, clear_constraints=False, clear_parents=False, use_current_action=True, bake_types={'OBJECT'})
                     new_action = get_active_action (final_rig)
                     new_action.name = new_action_name
                     new_action.name = new_action_name
@@ -1297,6 +1310,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     for pbone in final_rig.pose.bones:
                         clear_blender_collection(pbone.constraints)
                     clear_blender_collection(final_rig.constraints)
+
             
             ########################################################
             # EXPORT OBJECTS FUNCTION 
@@ -1457,7 +1471,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 
                 rename_materials (objects = meshes_to_export)
                 
-                rotate_skeleton(ori_ao)
+                rotate_skeleton(final_rig)
 
                 if pack_objects:
                     
@@ -1538,6 +1552,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     baked_actions = bake_actions(actions_to_export)
                     rotate_skeleton(final_rig)
                     unconstraint_final_rig() 
+                    set_active_action (ori_ao, None)
                     
                     if owner.pack_actions:
                         
@@ -1567,7 +1582,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                             filepath = folder_path + animation_prefix + character_name + separator + action_name + animation_suffix + format
                             os.makedirs (folder_path, exist_ok=True)
                             
-                            set_active_action (baked_action)
+                            set_active_action (final_rig, baked_action)
                             adjust_scene_to_action_length (object = ori_ao)
                             set_animation_name (action_name)
 
