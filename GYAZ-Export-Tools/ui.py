@@ -545,7 +545,9 @@ class SCENE_PT_GYAZ_Export_Extras (Panel):
     # add ui elements here
     def draw (self, context):      
         lay = self.layout     
-        lay.operator ('import_scene.fbx', text='Import FBX')
+        op = lay.operator ('import_scene.fbx', text='Import FBX')
+        op.ignore_leaf_bones=True
+        op.automatic_bone_orientation=True
 
 
 def register():
