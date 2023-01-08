@@ -27,7 +27,7 @@ from pathlib import Path
 from bpy.props import *
 from .utils import report, popup, list_to_visual_list, make_active_only, make_active, sn, get_active_action, \
     is_str_blank, detect_mirrored_uvs, clear_transformation, clear_transformation_matrix, \
-    gather_images_from_nodes, reset_all_pose_bones, clear_blender_collection
+    gather_images_from_nodes, reset_all_pose_bones, clear_blender_collection, set_active_action
 
 
 prefs = bpy.context.preferences.addons[__package__].preferences
@@ -637,12 +637,12 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 final_rig_data = ori_ao.data.copy ()
                 
                 # create new armature object
-                final_rig = bpy.data.objects.new (name="Armature", object_data=final_rig_data)
+                final_rig = bpy.data.objects.new (name="root", object_data=final_rig_data)
                 scene.collection.objects.link (final_rig)
                 make_active_only (final_rig)
 
-                final_rig.name = "Armature"
-                final_rig.name = "Armature"
+                final_rig.name = "root"
+                final_rig.name = "root"
                 final_rig.rotation_mode = "QUATERNION"
                 
                 # remove drivers
@@ -672,16 +672,14 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 for item in extra_bone_info:    
                     set_bone_parent (item['name'], item['parent'] )  
 
-                # create root bone
-                root_ebone = final_rig.data.edit_bones.new (name=root_bone_name)
-                if target_y_up_z_forward:
-                    root_ebone.tail = (0, 0, -.1)
-                else:
+                if asset_type == "ANIMATIONS":
+                    # create root bone
+                    root_ebone = final_rig.data.edit_bones.new (name=root_bone_name)
                     root_ebone.tail = (0, .1, 0)
-                root_ebone.roll = 0
-                for ebone in final_rig.data.edit_bones:
-                    if ebone.parent is None:
-                        ebone.parent = root_ebone
+                    root_ebone.roll = 0
+                    for ebone in final_rig.data.edit_bones:
+                        if ebone.parent is None:
+                            ebone.parent = root_ebone
                     
                 # delete constraints
                 bpy.ops.object.mode_set (mode='POSE')
@@ -1231,21 +1229,14 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             if asset_type == 'ANIMATIONS' or asset_type == 'RIGID_ANIMATIONS':
             
                 actions_names = scene.gyaz_export.actions
-                
-                def set_active_action (obj, action):
-                    if getattr (obj, "animation_data") == None:
-                        obj.animation_data_create ()
-                    
-                    reset_all_pose_bones(obj)
-                    obj.animation_data.action = action
-
 
                 def bake_actions (actions):
                     baked_actions = []
+
                     for action in actions:
                         make_active_only (ori_ao)
                         set_active_action (ori_ao, action)
-                        adjust_scene_to_action_length (ori_ao)
+                        adjust_scene_to_action_length (action)
                         make_active_only (final_rig)
                         bpy.ops.nla.bake (frame_start=scene.frame_start, frame_end=scene.frame_end, only_selected=False, visual_keying=True, clear_constraints=False, clear_parents=False, use_current_action=False, bake_types={'POSE'})
                         new_action = get_active_action (final_rig)
@@ -1254,6 +1245,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                         new_action.name = action_name
                         new_action.name = action_name
                         baked_actions.append(new_action)
+
                     return baked_actions
 
 
@@ -1291,14 +1283,12 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     return actions_to_export
                 
                 
-                def adjust_scene_to_action_length (object):
-                    action = get_active_action (object)
-                    if action is not None:
-                        frame_start, frame_end = action.frame_range
-                        scene.frame_start = int(frame_start)
-                        scene.frame_end = int(frame_end)
-                        scene.frame_preview_start = int(frame_start)
-                        scene.frame_preview_end = int(frame_end)
+                def adjust_scene_to_action_length (action):
+                    frame_start, frame_end = action.frame_range
+                    scene.frame_start = int(frame_start)
+                    scene.frame_end = int(frame_end)
+                    scene.frame_preview_start = int(frame_start)
+                    scene.frame_preview_end = int(frame_end)
 
 
                 def set_animation_name (name):
@@ -1533,9 +1523,10 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     filepath = folder_path + animation_prefix + character_name + "_" + anim_name + animation_suffix + format
                     os.makedirs (folder_path, exist_ok=True) 
                     
-                    bake_action_from_scene(owner.global_anim_name)
+                    baked_action = bake_action_from_scene(owner.global_anim_name)
                     rotate_skeleton(final_rig)
                     unconstraint_final_rig()
+                    self.move_root_motion_from_bone_to_object(final_rig, root_bone_name, [baked_action])
 
                     set_animation_name (owner.global_anim_name)
 
@@ -1552,6 +1543,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     baked_actions = bake_actions(actions_to_export)
                     rotate_skeleton(final_rig)
                     unconstraint_final_rig() 
+                    self.move_root_motion_from_bone_to_object(final_rig, root_bone_name, baked_actions)
                     set_active_action (ori_ao, None)
                     
                     if owner.pack_actions:
@@ -1583,7 +1575,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                             os.makedirs (folder_path, exist_ok=True)
                             
                             set_active_action (final_rig, baked_action)
-                            adjust_scene_to_action_length (object = ori_ao)
+                            adjust_scene_to_action_length (baked_action)
                             set_animation_name (action_name)
 
                             export_objects (filepath, objects = [final_rig] + mesh_children)
@@ -1636,7 +1628,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                         separator = "_" if obj_name != "" else ""
                         filepath = folder_path + prefix + obj_name + separator + anim_name + suffix + format 
                         
-                        adjust_scene_to_action_length (object = obj)
+                        adjust_scene_to_action_length (get_active_action(obj))
                         set_animation_name (anim_name)
                         
                         os.makedirs(folder_path, exist_ok=True)
@@ -2101,6 +2093,68 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
         
         
         return {'FINISHED'}
+
+
+    def move_root_motion_from_bone_to_object(self, rig, root_bone_name, actions):
+        
+        scene = bpy.context.scene
+
+        # craete root empty
+        root_empty = bpy.data.objects.new(name="GYAZ_Exporter_root_empty", object_data=None)
+        root_empty.rotation_mode = "QUATERNION"
+        scene.collection.objects.link(root_empty)
+
+        for action in actions:
+            
+            # constraint root_empty to rig's root bone
+            cs = root_empty.constraints
+            
+            c = cs.new(type="COPY_LOCATION")
+            c.target = rig
+            c.subtarget = root_bone_name
+            
+            c = cs.new(type="COPY_ROTATION")
+            c.target = rig
+            c.subtarget = root_bone_name
+            c.target_space = "LOCAL_OWNER_ORIENT"
+            
+            # bake root motion from rig's root bone to root_empty
+            make_active_only(root_empty)
+            set_active_action(rig, action)
+            bpy.ops.nla.bake(frame_start=scene.frame_start, frame_end=scene.frame_end, only_selected=False, visual_keying=True, 
+                            clear_constraints=True, clear_parents=False, use_current_action=False, bake_types={'OBJECT'})
+            
+            # constraint rig to root_empty
+            cs = rig.constraints
+            
+            c = cs.new(type="COPY_LOCATION")
+            c.target = root_empty
+            
+            c = cs.new(type="COPY_ROTATION")
+            c.target = root_empty
+            
+            # remove root motion from rig's root bone
+            root_bone_fcurve_data_path_prefix = 'pose.bones["' + root_bone_name + '"].'
+            fcurves = action.fcurves
+            for fcurve in fcurves:
+                if fcurve.data_path.startswith(root_bone_fcurve_data_path_prefix):
+                    fcurves.remove(fcurve)
+            
+            # bake root motion from root_empty to rig
+            make_active_only(rig)
+            bpy.ops.nla.bake(frame_start=scene.frame_start, frame_end=scene.frame_end, only_selected=False, visual_keying=True, 
+                            clear_constraints=True, clear_parents=False, use_current_action=True, bake_types={'OBJECT'})
+            
+        # delete root_empty
+        scene.collection.objects.unlink(root_empty)
+        bpy.data.objects.remove(root_empty, do_unlink=True)
+
+        # remove root bone from rig
+        make_active_only(rig)
+        bpy.ops.object.mode_set(mode="EDIT")
+        rig.data.edit_bones.remove(rig.data.edit_bones[root_bone_name])
+        bpy.ops.object.mode_set(mode="OBJECT")
+
     
     # when the buttons should show up    
     @classmethod

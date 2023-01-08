@@ -117,3 +117,10 @@ def delete_object(obj):
 def clear_blender_collection(collection):
     for item in collection:
         collection.remove(item)
+
+
+def set_active_action (obj, action):
+    if getattr (obj, "animation_data") == None:
+        obj.animation_data_create ()
+    reset_all_pose_bones(obj)
+    obj.animation_data.action = action
