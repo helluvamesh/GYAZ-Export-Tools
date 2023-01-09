@@ -22,8 +22,8 @@
 
 
 import bpy, os
-from bpy.types import PropertyGroup, UIList, Scene, Object, Mesh, Action
-from bpy.props import *
+from bpy.types import PropertyGroup, Scene, Object
+from bpy.props import BoolProperty, StringProperty, EnumProperty, IntProperty, FloatProperty, CollectionProperty, PointerProperty
 
 
 # object props

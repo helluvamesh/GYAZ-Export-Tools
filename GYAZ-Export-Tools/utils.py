@@ -1,6 +1,6 @@
-import bpy
+import bpy, re
 import numpy as np
-from mathutils import Vector, Matrix, Quaternion
+from mathutils import Matrix
 
 
 def report (self, item, error_or_info):
@@ -26,7 +26,7 @@ def make_active_only (obj):
 
     
 def make_active (obj):
-    bpy.context.view_layer.objects.active = obj   
+    bpy.context.view_layer.objects.active = obj  
 
 
 # safe name
@@ -124,3 +124,45 @@ def set_active_action (obj, action):
         obj.animation_data_create ()
     reset_all_pose_bones(obj)
     obj.animation_data.action = action
+
+
+def can_be_converted_to_number (string):
+    try:
+        int(string)
+        return True
+    except:
+        return False
+
+
+def remove_dot_plus_three_numbers (name):
+    if len(name) < 4:
+        return name
+    elif name[-4] == '.' and can_be_converted_to_number (name[-3:]):
+        return name[:-4]
+    else:
+        return name
+
+
+def make_lod_object_name_pattern():
+    return re.compile("(.*)[_\\s]lod_?(\\d+)$", re.IGNORECASE)
+
+def get_name_and_lod_index(lod_pattern, name):
+    finds = re.findall(lod_pattern, name)
+    if len(finds) == 1:
+        info = finds[0]
+        return (info[0], int(info[1]))
+    else:
+        return None
+
+
+def set_bone_parent(ebones, name, parent_name):
+    ebone = ebones.get(name)
+    if ebone is not None:
+        if parent_name == None:
+            ebone.parent = None      
+        else:
+            ebone.parent = ebones.get(parent_name)
+
+
+class POD:
+    pass

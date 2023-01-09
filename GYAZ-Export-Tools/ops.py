@@ -21,7 +21,8 @@
 ##########################################################################################################
 
 import bpy, os, subprocess
-from bpy.props import *
+from bpy.props import StringProperty, EnumProperty, IntProperty
+from .utils import report
 
 
 class Op_GYAZ_Export_SelectFileInWindowsFileExplorer (bpy.types.Operator):
