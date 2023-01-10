@@ -110,7 +110,6 @@ class GYAZ_Export_Preferences (AddonPreferences):
     
     skeletal_mesh_limit_bone_influences: EnumProperty (name='Max Bone Inflences', description="Limit bone influences by vertex",
         items=(
-            ('1', '1', ''),
             ('2', '2', ''),
             ('4', '4', ''),
             ('8', '8', ''),

@@ -25,20 +25,20 @@ from bpy.props import StringProperty, EnumProperty, IntProperty
 from .utils import report
 
 
-class Op_GYAZ_Export_SelectFileInWindowsFileExplorer (bpy.types.Operator):
+# class Op_GYAZ_Export_SelectFileInWindowsFileExplorer (bpy.types.Operator):
        
-    bl_idname = "object.gyaz_export_select_file_in_explorer"  
-    bl_label = "GYAZ Export: Select File in Explorer"
-    bl_description = "Select File in file explorer"
+#     bl_idname = "object.gyaz_export_select_file_in_explorer"  
+#     bl_label = "GYAZ Export: Select File in Explorer"
+#     bl_description = "Select File in file explorer"
     
-    path: StringProperty (default='', options={'SKIP_SAVE'})
+#     path: StringProperty (default='', options={'SKIP_SAVE'})
     
-    # operator function
-    def execute(self, context):  
-        path = os.path.abspath ( bpy.path.abspath (self.path) )    
-        subprocess.Popen(r'explorer /select,'+path)
+#     # operator function
+#     def execute(self, context):  
+#         path = os.path.abspath ( bpy.path.abspath (self.path) )    
+#         subprocess.Popen(r'explorer /select,'+path)
          
-        return {'FINISHED'}
+#         return {'FINISHED'}
 
     
 class Op_GYAZ_Export_OpenFolderInWindowsFileExplorer (bpy.types.Operator):
@@ -55,7 +55,6 @@ class Op_GYAZ_Export_OpenFolderInWindowsFileExplorer (bpy.types.Operator):
         subprocess.Popen ('explorer "'+path+'"')
           
         return {'FINISHED'}
-
     
 
 class Op_GYAZ_Export_SavePreset (bpy.types.Operator):
@@ -538,7 +537,7 @@ def register():
     bpy.utils.register_class (Op_GYAZ_Export_MarkAllSelectedNotForExport)      
     bpy.utils.register_class (Op_GYAZ_Export_MarkAllForExport)      
     bpy.utils.register_class (Op_GYAZ_Export_MarkAllNotForExport)      
-    bpy.utils.register_class (Op_GYAZ_Export_SelectFileInWindowsFileExplorer)   
+    #bpy.utils.register_class (Op_GYAZ_Export_SelectFileInWindowsFileExplorer)   
     bpy.utils.register_class (Op_GYAZ_Export_OpenFolderInWindowsFileExplorer)     
     bpy.utils.register_class (Op_GYAZ_Export_SavePreset)   
     bpy.utils.register_class (Op_GYAZ_Export_RemovePreset)   
@@ -559,7 +558,7 @@ def unregister():
     bpy.utils.unregister_class (Op_GYAZ_Export_MarkAllSelectedNotForExport)      
     bpy.utils.unregister_class (Op_GYAZ_Export_MarkAllForExport)      
     bpy.utils.unregister_class (Op_GYAZ_Export_MarkAllNotForExport)      
-    bpy.utils.unregister_class (Op_GYAZ_Export_SelectFileInWindowsFileExplorer)   
+    #bpy.utils.unregister_class (Op_GYAZ_Export_SelectFileInWindowsFileExplorer)   
     bpy.utils.unregister_class (Op_GYAZ_Export_OpenFolderInWindowsFileExplorer)    
     bpy.utils.unregister_class (Op_GYAZ_Export_SavePreset)   
     bpy.utils.unregister_class (Op_GYAZ_Export_RemovePreset)   

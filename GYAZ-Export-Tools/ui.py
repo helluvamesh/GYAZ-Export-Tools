@@ -356,7 +356,7 @@ class SCENE_PT_GYAZ_Export (Panel):
         row = lay.row (align=True)
         row.scale_y = 2
         row.operator ('object.gyaz_export_export', text='EXPORT', icon='EXPORT')
-        row.operator ('object.gyaz_export_select_file_in_explorer', text='', icon='VIEWZOOM').path=owner.path_to_last_export
+        row.operator ('object.gyaz_export_open_folder_in_explorer', text='', icon='VIEWZOOM').path=owner.path_to_last_export
         
     # when the buttons should show up    
     @classmethod
@@ -451,7 +451,7 @@ class SCENE_PT_GYAZ_Export_Mesh (Panel):
                 row = lay.row (align=True)
                 row.scale_y = 2
                 row.operator ('object.gyaz_export_export', text='EXPORT', icon='EXPORT')
-                row.operator ('object.gyaz_export_select_file_in_explorer', text='', icon='VIEWZOOM').path=bpy.context.scene.gyaz_export.path_to_last_export
+                row.operator ('object.gyaz_export_open_folder_in_explorer', text='', icon='VIEWZOOM').path=bpy.context.scene.gyaz_export.path_to_last_export
 
     # when the buttons should show up    
     @classmethod

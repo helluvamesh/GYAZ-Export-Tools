@@ -261,130 +261,137 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
         if not bpy.context.blend_data.is_saved:
             report (self, 'Blend file has never been saved.', 'WARNING')
             return {"CANCELLED"}
-        else:
             
-            space = None
-            for area in bpy.context.screen.areas:
-                if area.type == 'VIEW_3D':
-                    space = area.spaces[0]
-                    break
-            if space is not None:
-                if space.local_view is not None:
-                    report (self, "Leave local view.", "WARNING")
-                    return {"CANCELLED"}
+        space = None
+        for area in bpy.context.screen.areas:
+            if area.type == 'VIEW_3D':
+                space = area.spaces[0]
+                break
+        if space is not None:
+            if space.local_view is not None:
+                report (self, "Leave local view.", "WARNING")
+                return {"CANCELLED"}
 
-
-            if asset_type == 'STATIC_MESHES' and pack_objects:
-                if is_str_blank(pack_name):
-                    report (self, "Pack name is invalid.", "WARNING")
-                    return {"CANCELLED"}
-                
-            elif asset_type == 'RIGID_ANIMATIONS' and pack_objects:
-                if is_str_blank(pack_name):
-                    report (self, "Pack name is invalid.", "WARNING")
-                    return {"CANCELLED"}
-                        
+        if asset_type == 'STATIC_MESHES' and pack_objects:
+            if is_str_blank(pack_name):
+                report (self, "Pack name is invalid.", "WARNING")
+                return {"CANCELLED"}
+            
+        elif asset_type == 'RIGID_ANIMATIONS' and pack_objects:
+            if is_str_blank(pack_name):
+                report (self, "Pack name is invalid.", "WARNING")
+                return {"CANCELLED"}
                     
-            if scene_gyaz_export.export_folder_mode == 'PATH':
-                if root_folder.startswith ('//'):
-                    report (self, "Use an absolute path for export folder instead of a relative path.", "WARNING")
-                    return {"CANCELLED"}
-                elif not os.path.isdir (root_folder):
-                    report (self, "Export path doesn't exist.", "WARNING")
-                    return {"CANCELLED"}
+                
+        if scene_gyaz_export.export_folder_mode == 'PATH':
+            if root_folder.startswith ('//'):
+                report (self, "Use an absolute path for export folder instead of a relative path.", "WARNING")
+                return {"CANCELLED"}
+            elif not os.path.isdir (root_folder):
+                report (self, "Export path doesn't exist.", "WARNING")
+                return {"CANCELLED"}
 
 
-            if asset_type == 'ANIMATIONS':
-                actions_set_for_export = scene_gyaz_export.actions
-                if ori_ao.type == 'ARMATURE':   
-                    if scene_gyaz_export.use_anim_object_name_override and is_str_blank(scene_gyaz_export.anim_object_name_override):
-                        report (self, 'Object name override is invalid.', 'WARNING')
-                        return {"CANCELLED"}
-                    else:
-                        if action_export_mode == 'ACTIVE': 
-                            if getattr (ori_ao, "animation_data") is not None:
-                                if ori_ao.animation_data.action is not None:
-                                    if scene_gyaz_export.pack_actions and is_str_blank(scene_gyaz_export.global_anim_name):
-                                        report (self, 'Action pack name is invalid.', 'WARNING')
-                                        return {"CANCELLED"}
-                                else:
-                                    report (self, 'Active object has no action assigned to it.', 'WARNING')
-                                    return {"CANCELLED"}
-                            else:
-                                report (self, 'Active object has no animation data.', 'WARNING')
-                                return {"CANCELLED"}
-                                
-                                
-                        elif action_export_mode == 'ALL':
-                            if len (bpy.data.actions) > 0:
+        if asset_type == 'ANIMATIONS':
+            actions_set_for_export = scene_gyaz_export.actions
+            if ori_ao.type == 'ARMATURE':   
+                if scene_gyaz_export.use_anim_object_name_override and is_str_blank(scene_gyaz_export.anim_object_name_override):
+                    report (self, 'Object name override is invalid.', 'WARNING')
+                    return {"CANCELLED"}
+                else:
+                    if action_export_mode == 'ACTIVE': 
+                        if getattr (ori_ao, "animation_data") is not None:
+                            if ori_ao.animation_data.action is not None:
                                 if scene_gyaz_export.pack_actions and is_str_blank(scene_gyaz_export.global_anim_name):
                                     report (self, 'Action pack name is invalid.', 'WARNING')
                                     return {"CANCELLED"}
                             else:
-                                report (self, 'No actions found in this .blend file.', 'WARNING')
+                                report (self, 'Active object has no action assigned to it.', 'WARNING')
                                 return {"CANCELLED"}
-
-                                
-                        elif action_export_mode == 'BY_NAME':
-                            items_ok = []
-                            for item in actions_set_for_export:
-                                if item.name != '':
-                                    items_ok.append (True)
-                                    
-                            if len (actions_set_for_export) > 0:
-                                if len (actions_set_for_export) == len (items_ok):
-                                    if scene_gyaz_export.pack_actions and is_str_blank(scene_gyaz_export.global_anim_name):
-                                        report (self, 'Action pack name is invalid.', 'WARNING')
-                                        return {"CANCELLED"}
-                                else:
-                                    report (self, 'One or more actions set to be exported are not found', 'WARNING') 
-                                    return {"CANCELLED"}
-                            else:
-                                report (self, 'No actions are set to be exported.', 'WARNING')
-                                return {"CANCELLED"}
-
-                        elif action_export_mode == "SCENE":
-                            if getattr (ori_ao, "animation_data") is not None:
-                                if is_str_blank(scene_gyaz_export.global_anim_name):
-                                    report (self, 'Animation name is invalid.', 'WARNING')
-                                    return {"CANCELLED"}
-                            else:
-                                report (self, 'Active object has no animation data.', 'WARNING')
-                                return {"CANCELLED"}
+                        else:
+                            report (self, 'Active object has no animation data.', 'WARNING')
+                            return {"CANCELLED"}
                             
-                else:
-                    report (self, 'Active object is not an armature.', 'WARNING')
-                    return {"CANCELLED"}
-
-                        
-            elif asset_type == 'SKELETAL_MESHES':
-                if ori_ao.type == 'ARMATURE':
-                    if len (mesh_children) > 0:
-                        if scene_gyaz_export.root_mode == 'BONE':    
-                            if ori_ao.data.bones.get (root_bone_name) is None:
-                                report (self, 'Root bone, called "' + root_bone_name + '", not found. Set object as root.', 'WARNING')
+                            
+                    elif action_export_mode == 'ALL':
+                        if len (bpy.data.actions) > 0:
+                            if scene_gyaz_export.pack_actions and is_str_blank(scene_gyaz_export.global_anim_name):
+                                report (self, 'Action pack name is invalid.', 'WARNING')
                                 return {"CANCELLED"}
-                    else:
-                        report (self, "Armature has no mesh children.", 'WARNING')
-                        return {"CANCELLED"}
-                else:
-                    report (self, "Active object is not an armature.", 'WARNING')
-                    return {"CANCELLED"}
+                        else:
+                            report (self, 'No actions found in this .blend file.', 'WARNING')
+                            return {"CANCELLED"}
+
+                            
+                    elif action_export_mode == 'BY_NAME':
+                        items_ok = []
+                        for item in actions_set_for_export:
+                            if item.name != '':
+                                items_ok.append (True)
+                                
+                        if len (actions_set_for_export) > 0:
+                            if len (actions_set_for_export) == len (items_ok):
+                                if scene_gyaz_export.pack_actions and is_str_blank(scene_gyaz_export.global_anim_name):
+                                    report (self, 'Action pack name is invalid.', 'WARNING')
+                                    return {"CANCELLED"}
+                            else:
+                                report (self, 'One or more actions set to be exported are not found', 'WARNING') 
+                                return {"CANCELLED"}
+                        else:
+                            report (self, 'No actions are set to be exported.', 'WARNING')
+                            return {"CANCELLED"}
+
+                    elif action_export_mode == "SCENE":
+                        if getattr (ori_ao, "animation_data") is not None:
+                            if is_str_blank(scene_gyaz_export.global_anim_name):
+                                report (self, 'Animation name is invalid.', 'WARNING')
+                                return {"CANCELLED"}
+                        else:
+                            report (self, 'Active object has no animation data.', 'WARNING')
+                            return {"CANCELLED"}
+                        
+            else:
+                report (self, 'Active object is not an armature.', 'WARNING')
+                return {"CANCELLED"}
+
                     
-                    
-            elif asset_type == 'STATIC_MESHES':      
-                if len (ori_sel_objs) <= 0:
-                    report (self, 'No objects set for export.', 'WARNING')
-                    return {"CANCELLED"}
-            
-            elif asset_type == 'RIGID_ANIMATIONS':
-                if len (ori_sel_objs) > 0:
-                    if is_str_blank(scene_gyaz_export.rigid_anim_name):
-                        report (self, 'Animation name is invalid.', 'WARNING')
-                        return {"CANCELLED"}
+        elif asset_type == 'SKELETAL_MESHES':
+            if ori_ao.type == 'ARMATURE':
+                if len (mesh_children) > 0:
+                    if scene_gyaz_export.root_mode == 'BONE':    
+                        if ori_ao.data.bones.get (root_bone_name) is None:
+                            report (self, 'Root bone, called "' + root_bone_name + '", not found. Set object as root.', 'WARNING')
+                            return {"CANCELLED"}
                 else:
-                    report (self, 'No objects set for export.', 'WARNING')
+                    report (self, "Armature has no mesh children.", 'WARNING')
                     return {"CANCELLED"}
+            else:
+                report (self, "Active object is not an armature.", 'WARNING')
+                return {"CANCELLED"}
+                
+                
+        elif asset_type == 'STATIC_MESHES':      
+            if len (ori_sel_objs) <= 0:
+                report (self, 'No objects set for export.', 'WARNING')
+                return {"CANCELLED"}
+        
+        elif asset_type == 'RIGID_ANIMATIONS':
+            if len (ori_sel_objs) > 0:
+                if is_str_blank(scene_gyaz_export.rigid_anim_name):
+                    report (self, 'Animation name is invalid.', 'WARNING')
+                    return {"CANCELLED"}
+                else:
+                    for obj in ori_sel_objs:
+                        if getattr (obj, "animation_data") is not None:
+                            if obj.animation_data.action is None:
+                                report (self, 'Object "' + obj.name + '" has no action assigned to it.', 'WARNING')
+                                return {"CANCELLED"}
+                        else:
+                            report (self, 'Object "' + obj.name + '" has no animation data.', 'WARNING')
+                            return {"CANCELLED"}
+            else:
+                report (self, 'No objects set for export.', 'WARNING')
+                return {"CANCELLED"}
 
         ###############################################################            
         # CONTENT CHECKS
@@ -738,21 +745,49 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             texture_suffix= ''
             animation_suffix = ''
   
+        #######################################################
+        # EXPORT DIR
+        #######################################################
+        
+        anims_folder = sn(prefs.anim_folder_name) + '/'
+        meshes_folder = sn(prefs.mesh_folder_name) + '/'
+
+        export_folder_mode = scene_gyaz_export.export_folder_mode
+        relative_folder_name = scene_gyaz_export.relative_folder_name
+        export_folder = scene_gyaz_export.export_folder
+
+        #export folder
+        if export_folder_mode == 'RELATIVE_FOLDER':
+            relative_folder_path = "//" + relative_folder_name
+            #make sure it is an absolute path
+            root_folder = os.path.abspath ( bpy.path.abspath (relative_folder_path) )
+            #create relative folder
+            os.makedirs(root_folder, exist_ok=True)
+        
+        elif export_folder_mode == 'PATH':    
+            #make sure it is an absolute path
+            root_folder = os.path.abspath ( bpy.path.abspath (export_folder) )
+
+        if asset_type == "STATIC_MESHES" or asset_type == "SKELETAL_MESHES":
+            dir = root_folder
+        elif asset_type == "ANIMATIONS" or asset_type == "RIGID_ANIMATIONS":
+            dir = root_folder + "/" + anims_folder
+
+        scene_gyaz_export.path_to_last_export = os.path.abspath ( bpy.path.abspath (dir) )       
+
         ###############################################################
         # SAVE .BLEND FILE BEFORE CHANGING ANYTHING
         ###############################################################        
         
-        file_is_saved = False
         blend_data = bpy.context.blend_data
         blend_path = blend_data.filepath
 
-        if blend_data.is_saved:
-            bpy.ops.wm.save_as_mainfile (filepath=blend_path)
-            file_is_saved = True
+        # make sure no images get deleted
+        for image in bpy.data.images:
+            if image.users == 0:
+                image.use_fake_user = True
 
-        else:
-            report (self, 'File has never been saved.', 'WARNING')
-            file_is_saved = False
+        bpy.ops.wm.save_as_mainfile (filepath=blend_path)
             
         ###############################################################
             
@@ -815,27 +850,6 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
         exporter = scene_gyaz_export.exporter
         if exporter == 'FBX':
             format = '.fbx'
-            
-        #######################################################
-        # EXPORT FOLDER
-        #######################################################
-        
-        export_folder_mode = scene_gyaz_export.export_folder_mode
-        relative_folder_name = scene_gyaz_export.relative_folder_name
-        export_folder = scene_gyaz_export.export_folder
-
-        #export folder
-        if export_folder_mode == 'RELATIVE_FOLDER':
-            relative_folder_path = "//" + relative_folder_name
-            #make sure it is an absolute path
-            root_folder = os.path.abspath ( bpy.path.abspath (relative_folder_path) )
-            #create relative folder
-            os.makedirs(root_folder, exist_ok=True)
-        
-        elif export_folder_mode == 'PATH':    
-            #make sure it is an absolute path
-            root_folder = os.path.abspath ( bpy.path.abspath (export_folder) )
-            
         
         ############################################################
         # GATHER COLLISION & SOCKETS
@@ -1330,10 +1344,6 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 scene.render.image_settings.color_depth = set_depth
                 scene.render.image_settings.compression = set_compresssion
                 
-                # texture export info
-                if len (image_set) > 0:
-                    return texture_folder
-                
         ########################################################
         # EXPORT OBJECTS FUNCTION 
         ###########################################################       
@@ -1427,22 +1437,10 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                         bake_anim_simplify_factor=fbx_settings.bake_anim_simplify_factor 
                     )               
                     report (self, 'Export has been successful.', 'INFO')
-            
-                # export_info    
-                if not (ex_tex and ex_tex_only):
-                    return filepath
-
-            return None
         
         ###########################################################
         # EXPORT BY ASSET TYPE
         ###########################################################
-
-        anims_folder = sn(prefs.anim_folder_name) + '/'
-        meshes_folder = sn(prefs.mesh_folder_name) + '/'
-        
-        export_info = None
-        texture_export_info = None
 
         bpy.ops.object.mode_set (mode='OBJECT')
         
@@ -1463,8 +1461,8 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 filepath = folder_path + filename
                 os.makedirs (folder_path, exist_ok=True)
                 
-                export_info = export_objects (filepath, objects = ori_sel_objs)   
-                texture_export_info = export_images (texture_root = root_folder)
+                export_objects (filepath, objects = ori_sel_objs)   
+                export_images (texture_root = root_folder)
                 
             else:
                 
@@ -1480,8 +1478,8 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     filepath = folder_path + filename
                     os.makedirs (folder_path, exist_ok=True)
                     
-                    export_info = export_objects (filepath, objects = [obj])
-                    texture_export_info = export_images (texture_root = root_folder)
+                    export_objects (filepath, objects = [obj])
+                    export_images (texture_root = root_folder)
                     
 
         elif asset_type == 'SKELETAL_MESHES':
@@ -1504,8 +1502,8 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     filepath = folder_path + filename
                     os.makedirs (folder_path, exist_ok=True)
                     
-                    export_info = export_objects (filepath, objects = [final_rig] + mesh_children)
-                    texture_export_info = export_images (texture_root = root_folder)                
+                    export_objects (filepath, objects = [final_rig] + mesh_children)
+                    export_images (texture_root = root_folder)                
                 
             else:
                 if len (mesh_children) > 0:
@@ -1521,8 +1519,8 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                         filepath = folder_path + filename
                         os.makedirs (folder_path, exist_ok=True)
                         
-                        export_info = export_objects (filepath, objects = [final_rig, child])    
-                        texture_export_info = export_images (texture_root = root_folder)
+                        export_objects (filepath, objects = [final_rig, child])    
+                        export_images (texture_root = root_folder)
                                         
                                 
         elif asset_type == 'ANIMATIONS':
@@ -1556,8 +1554,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
 
                 self.set_animation_name(scene_gyaz_export.global_anim_name)
 
-                export_objects (filepath, objects = [final_rig] + mesh_children)
-                export_info = filepath   
+                export_objects (filepath, objects = [final_rig] + mesh_children) 
 
             # actions
             else:
@@ -1588,7 +1585,6 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     os.makedirs (folder_path, exist_ok=True) 
 
                     export_objects (filepath, objects = [final_rig] + mesh_children)
-                    export_info = filepath   
 
                 else:
                     for baked_action in baked_actions:
@@ -1603,7 +1599,6 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                         self.set_animation_name(action_name)
                         
                         export_objects (filepath, objects = [final_rig] + mesh_children)
-                        export_info = filepath
                         
 
         elif asset_type == 'RIGID_ANIMATIONS':
@@ -1635,9 +1630,9 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 os.makedirs(folder_path, exist_ok=True) 
                 self.set_animation_name(anim_name)
                     
-                export_info = export_objects (filepath, objects = ori_sel_objs)
+                export_objects (filepath, objects = ori_sel_objs)
                 if not rigid_anim_cubes:
-                    texture_export_info = export_images (texture_root = root_folder)
+                    export_images (texture_root = root_folder)
                     
             else:
             
@@ -1656,54 +1651,17 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     
                     os.makedirs(folder_path, exist_ok=True)
                     
-                    export_info = export_objects (filepath, objects = [obj])
+                    export_objects (filepath, objects = [obj])
                     if not rigid_anim_cubes:
-                        texture_export_info = export_images (texture_root = root_folder)
-
-    
-        # make sure no images get deleted (because aftert the export, the blend file is reloaded)
-        # it should be called before and after reload
-        for image in bpy.data.images:
-            if image.users == 0:
-                image.use_fake_user = True
-        
+                        export_images (texture_root = root_folder)
         
         ###############################################################
         # REOPEN LAST SAVED .BLEND FILE
         # to restore the scene to the state before the exporting
         ###############################################################        
         
-        if file_is_saved:
-            show_debug_props = scene_gyaz_export.show_debug_props
-            
-            if not show_debug_props:    
-                scene_gyaz_export.dont_reload_scene = False
-            if not scene_gyaz_export.dont_reload_scene:        
-                bpy.ops.wm.open_mainfile (filepath=blend_path) 
-                
-        # make sure no images get deleted (because aftert the export, the blend file is reloaded)
-        # it should be called before and after reload
-        for image in bpy.data.images:
-            if image.users == 0:
-                image.use_fake_user = True
-        
-        
-        if not scene_gyaz_export.dont_reload_scene:
-            # export_info: for opening last export in explorer
-            info = None
-            if export_info is not None:
-                info = export_info
-            elif texture_export_info is not None:
-                info = texture_export_info[:-1]
-            
-            if info is not None:  
-                info = os.path.abspath ( bpy.path.abspath (info) )
-                scene_gyaz_export.path_to_last_export = info
-            
-            # the blend file is saved once before changing anything, everything is saved besides the path to last export
-            # because it's saved after reloading the blend file
-            # so save blend file again to save the path to last export, too
-            bpy.ops.wm.save_as_mainfile (filepath=blend_path)  
+        if not (scene_gyaz_export.show_debug_props and scene_gyaz_export.dont_reload_scene):
+            bpy.ops.wm.open_mainfile (filepath=blend_path)
         
         return {'FINISHED'}
 
