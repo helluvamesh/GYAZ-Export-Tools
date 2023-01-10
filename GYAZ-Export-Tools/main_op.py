@@ -1315,10 +1315,11 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 if len (image_set) > 0:
                     
                     texture_folder = texture_root + '/' + sn(prefs.texture_folder_name) + '/'
-                    
                     os.makedirs (texture_folder, exist_ok=True)
                     
-                    image_format_map = {
+                    image_constants = POD()
+
+                    image_constants.format_map = {
                         'BMP': 'bmp',
                         'IRIS': 'rgb',
                         'PNG': 'png',
@@ -1334,8 +1335,16 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                         'TIFF': 'tif'
                     }
 
+                    image_constants._8_bits = (8, 24, 32)
+                    image_constants._16_bits = (16, 48, 64)
+                    image_constants._32_bits = (96, 128)
+                     
+                    image_constants._1_channel = (8, 16)
+                    image_constants._3_channels = (24, 48, 96)
+                    image_constants._4_channels = (32, 64, 128)
+
                     for image in image_set:
-                        self.export_image (image, texture_folder, image_format_map, texture_prefix, texture_suffix)
+                        self.export_image (image, texture_folder, image_constants, texture_prefix, texture_suffix)
 
 
                 # restore previous render settings
@@ -1687,7 +1696,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 material.name = prefix + name + suffix
 
 
-    def export_image (self, image, texture_folder, image_format_map, texture_prefix, texture_suffix):
+    def export_image (self, image, texture_folder, image_constants, texture_prefix, texture_suffix):
         
         scene = bpy.context.scene
         scene_gyaz_export = scene.gyaz_export
@@ -1708,7 +1717,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             new_image = image.copy ()
             new_image.pack ()
             
-            image_extension = image_format_map[image.file_format]    
+            image_extension = image_constants.format_map[image.file_format]    
             image_name_ending = str.lower (image.name[-4:])
             
             if image_name_ending == '.'+image_extension:
@@ -1718,7 +1727,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             new_image.name = image.name + extension
             new_image.name = new_image.name [:-4]
             
-            final_extension = image_format_map[final_image_format]
+            final_extension = image_constants.format_map[final_image_format]
             
             prefix = texture_prefix if not new_image.name.startswith (texture_prefix) else ''  
             suffix = texture_suffix if not new_image.name.endswith (texture_suffix) else ''  
@@ -1726,38 +1735,27 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             new_image.filepath = texture_folder + prefix + sn(new_image.name) + suffix + '.' + final_extension
             new_image.filepath = os.path.abspath ( bpy.path.abspath (new_image.filepath) )
 
-                
             # color depth
-            _8_bits = [8, 24, 32]
-            _16_bits = [16, 48, 64]
-            _32_bits = [96, 128]
-            
-            if image.depth in _8_bits:
+            if image.depth in image_constants._8_bits:
                 final_color_depth = '8'
-            elif image.depth in _16_bits:
+            elif image.depth in image_constants._16_bits:
                 final_color_depth = '16'
-            elif image.depth in _32_bits:
+            elif image.depth in image_constants._32_bits:
                 final_color_depth = '32'
             else:  
                 # fallback
                 final_color_depth = '8'
             
-            
-            # color mode    
-            _1_channel = [8, 16]
-            _3_channels = [24, 48, 96]
-            _4_channels = [32, 64, 128]
-            
-            if image.depth in _1_channel:
+            # color mode
+            if image.depth in image_constants._1_channel:
                 final_color_mode = 'BW'
-            elif image.depth in _3_channels:
+            elif image.depth in image_constants._3_channels:
                 final_color_mode = 'RGB'
-            elif image.depth in _4_channels:
+            elif image.depth in image_constants._4_channels:
                 final_color_mode = 'RGBA'
             else:
                 # fallback
                 final_color_mode = 'RGBA'
-            
             
             # save image
             filepath = new_image.filepath
