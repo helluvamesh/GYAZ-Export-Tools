@@ -28,7 +28,7 @@ from bpy.props import EnumProperty
 from .utils import report, popup, list_to_visual_list, make_active_only, sn, get_active_action, \
     is_str_blank, detect_mirrored_uvs, clear_transformation, clear_transformation_matrix, \
     gather_images_from_nodes, clear_blender_collection, set_active_action, POD, remove_dot_plus_three_numbers, \
-    make_lod_object_name_pattern, get_name_and_lod_index, set_bone_parent
+    make_lod_object_name_pattern, get_name_and_lod_index, set_bone_parent, make_active
 
 
 prefs = bpy.context.preferences.addons[__package__].preferences
@@ -1409,7 +1409,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     for obj in final_selected_objects:
                         obj.select_set(True) 
                     if len(final_selected_objects) > 0:
-                        make_active_only(final_selected_objects[0])
+                        make_active(final_selected_objects[0])
                     
                     bpy.ops.export_scene.fbx(
                         filepath=filepath, 
