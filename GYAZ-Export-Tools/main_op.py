@@ -893,20 +893,26 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                                 collision.matrix_parent_inverse = obj.matrix_world.inverted ()
             
                 
-            # gather and rescale sockets (single bone armature objects)
             export_sockets = scene_gyaz_export.export_sockets
             if export_sockets:
                 
-                for obj in ori_sel_objs:
-                    for child in obj.children:
-                        if child.type == 'ARMATURE' and child.name.startswith ('SOCKET_'):
-                            if target_cm_scale_unit:
+                # gather and rescale sockets (single bone armature objects)
+                if scene_gyaz_export.target_app == "UNREAL":
+                    for obj in ori_sel_objs:
+                        for child in obj.children:
+                            if child.type == 'ARMATURE' and child.name.startswith ('SOCKET_'):
                                 child.scale *= .01
-                            if child.rotation_mode != 'QUATERNION':
-                                child.rotation_mode = 'QUATERNION'
-                            child.rotation_quaternion = child.rotation_quaternion @ Quaternion((0.707, 0.707, .0, .0))
-                            sockets.append (child)
-                            
+                                if child.rotation_mode != 'QUATERNION':
+                                    child.rotation_mode = 'QUATERNION'
+                                child.rotation_quaternion = child.rotation_quaternion @ Quaternion((0.707, 0.707, .0, .0))
+                                sockets.append (child)
+
+                elif scene_gyaz_export.target_app == "UNITY":
+                    if asset_type == 'STATIC_MESHES':
+                        for obj in ori_sel_objs:
+                            for child in obj.children:
+                                if child.type == 'EMPTY' and child.name.startswith ('SOCKET_'):
+                                    sockets.append (child)
             
             # clear lod transform
             if export_lods:

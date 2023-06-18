@@ -190,7 +190,7 @@ class PG_GYAZ_ExportProps (PropertyGroup):
             ),
         default='SKELETAL_MESHES')
 
-    static_mesh_pack_objects: BoolProperty (name='Pack Objects', default=False, description='Whether to pack all objects into one file or export them as separate files. If true, sockets will not be exported')
+    static_mesh_pack_objects: BoolProperty (name='Pack Objects', default=False, description='Whether to pack all objects into one file or export them as separate files. If true, sockets will not be imported in Unreal')
     skeletal_mesh_pack_objects: BoolProperty (name='Pack Objects', default=False, description='Whether to pack all objects into one file (name of the armature) or export them as separate files (names of mesh children)')
     rigid_anim_pack_objects: BoolProperty (name='Pack Objects', default=False, description="Whether to pack all objects into one file or export them as separate files. If checked, 'Use Scene Start End' is forced, 'Export Cubes' is not an option")
     pack_actions: BoolProperty (name='Pack Actions', default=False, description='Whether to pack all actions into one file or export them as separate files')
@@ -229,7 +229,7 @@ class PG_GYAZ_ExportProps (PropertyGroup):
     
     export_collision: BoolProperty (default=True, name='Collision', description='Prefixes: UBX (box), USP (sphere), UCP (capsule), UCX (convex). Example: Object --> UBX_Object, UBX_Object.001. Collision (mesh) objects are gathered automatically and should not be selected')
     
-    export_sockets: BoolProperty (default=True, name='Sockets', description='Sockets need to be parented to the object and only work if a file only contains one object. Prefix: SOCKET_, Example: Object --> SOCKET_anything. Socket (armature) objects are gathered automatically and should not be selected. Scale is ignored')
+    export_sockets: BoolProperty (default=True, name='Sockets', description='Unreal: Sockets are single-bone armature objects parented to the object and only work if a file only contains one object. Scale is ignored. Unity: Sockets are empty objects parented to the object, only for static meshes. Prefix: SOCKET_, Example: Object --> SOCKET_anything. Sockets are gathered automatically and should not be selected.')
     
     export_lods: BoolProperty (default=True, name='LODs', description='Suffix: Obj or Obj_LOD0 --> Obj_LOD1, Obj_LOD2. LODs are gathered automatically and should not be selected. For Unreal only static mesh LODs are exported.')
     
