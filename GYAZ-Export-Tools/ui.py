@@ -403,7 +403,20 @@ class SCENE_PT_GYAZ_Export_Mesh (Panel):
             if owner.merge_materials:
                 row = col.row (align=True)
                 row.label (icon='BLANK1')
-                row.prop (owner, 'atlas_name', text="")   
+                row.prop (owner, 'atlas_name', text="")  
+
+                if len(mesh.materials) > 0:
+                    col = col.column (align=True)
+                    col.label (text="Exclude from merging:")
+                    merge_exclusion_idx = -1
+                    for material in mesh.materials:
+                        merge_exclusion_idx += 1
+                        if merge_exclusion_idx > 31:
+                            break
+                        col.prop (
+                            owner, "merge_exclusions", index=merge_exclusion_idx, toggle=True,
+                            text=material.name if material is not None else str(merge_exclusion_idx)
+                            )
 
             lay.operator("object.gyaz_export_generate_lods", text="Generate LODs")
 

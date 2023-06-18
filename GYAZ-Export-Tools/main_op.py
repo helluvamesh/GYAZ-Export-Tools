@@ -1270,16 +1270,39 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 if obj.data.gyaz_export.merge_materials:
                 
                     mats = obj.data.materials
-                    for mat in mats:
-                        if len (mats) > 1:
-                            mats.pop (index=0)
-                    
-                    atlas_name = obj.data.gyaz_export.atlas_name
-                    atlas_material = bpy.data.materials.get (atlas_name)
-                    if atlas_material == None:
-                        atlas_material = bpy.data.materials.new (name=atlas_name)
-                    obj.material_slots[0].material = atlas_material    
-                
+
+                    not_excluded_material = None
+                    not_excluded_material_idx = -1
+
+                    deleted_mat_indices = []
+
+                    for mat_idx, mat in enumerate(mats):
+                        merge_exception = obj.data.gyaz_export.merge_exclusions[mat_idx] if mat_idx <= 31 else False
+                        if not merge_exception:
+                            not_excluded_material = mat
+                            not_excluded_material_idx = mat_idx
+                            break
+
+                    if not_excluded_material is not None:
+                        for mat_idx, mat in enumerate(mats):
+                            merge_exception = obj.data.gyaz_export.merge_exclusions[mat_idx] if mat_idx <= 31 else False
+                            if mat is not not_excluded_material and not merge_exception:
+                                deleted_mat_indices.append(mat_idx)
+                        
+                        deleted_mat_indices_set = set(deleted_mat_indices)
+                        for face in mesh.polygons:
+                            if face.material_index in deleted_mat_indices_set:
+                                face.material_index = not_excluded_material_idx
+                        
+                        for slot_idx in reversed(deleted_mat_indices):
+                            mats.pop(index=slot_idx)
+                                
+                        atlas_name = obj.data.gyaz_export.atlas_name
+                        atlas_material = bpy.data.materials.get (atlas_name)
+                        if atlas_material is None:
+                            atlas_material = bpy.data.materials.new (name=atlas_name)
+                        obj.material_slots[not_excluded_material_idx].material = atlas_material
+
             
         # collision         
         for obj in collision_objects:

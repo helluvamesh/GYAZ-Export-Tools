@@ -506,7 +506,7 @@ class PG_GYAZ_Export_MeshProps (PropertyGroup):
     vert_color_export: BoolVectorProperty (size=8, default=[True]*8, description='Whether the GYAZ Exporter keeps this vertex color layer')
     merge_materials: BoolProperty (name='Merge Materials', default=False, description='Whether the GYAZ Exporter merges materials on export or keeps them as they are')
     atlas_name: StringProperty (name='Atlas', default='', description='Name of the merged material')
-    
+    merge_exclusions: BoolVectorProperty (name='Merge Exclusions', size=32, description='Whether the GYAZ Exporter ignores this material slot when merging materials')
 
 def register():
     bpy.utils.register_class (PG_GYAZ_Export_MeshProps)
