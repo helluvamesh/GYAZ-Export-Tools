@@ -1277,16 +1277,16 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     deleted_mat_indices = []
 
                     for mat_idx, mat in enumerate(mats):
-                        merge_exception = obj.data.gyaz_export.merge_exclusions[mat_idx] if mat_idx <= 31 else False
-                        if not merge_exception:
+                        merge_excluded = obj.data.gyaz_export.merge_exclusions[mat_idx] if mat_idx <= 31 else False
+                        if not merge_excluded:
                             not_excluded_material = mat
                             not_excluded_material_idx = mat_idx
                             break
 
                     if not_excluded_material is not None:
                         for mat_idx, mat in enumerate(mats):
-                            merge_exception = obj.data.gyaz_export.merge_exclusions[mat_idx] if mat_idx <= 31 else False
-                            if mat is not not_excluded_material and not merge_exception:
+                            merge_excluded = obj.data.gyaz_export.merge_exclusions[mat_idx] if mat_idx <= 31 else False
+                            if mat is not not_excluded_material and not merge_excluded:
                                 deleted_mat_indices.append(mat_idx)
                         
                         deleted_mat_indices_set = set(deleted_mat_indices)
