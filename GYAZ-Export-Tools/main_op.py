@@ -282,13 +282,9 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 report (self, "Pack name is invalid.", "WARNING")
                 return {"CANCELLED"}
 
-        path_exists = False
         if root_folder.startswith ('//'):
             root_folder = os.path.abspath ( bpy.path.abspath (root_folder) )
-            path_exists = os.path.isdir(root_folder)
-        else:
-            path_exists = os.path.isdir(root_folder)
-        if not path_exists:
+        if not os.path.isdir(root_folder):
             report (self, "Export folder (Destination) doesn't exist.", "WARNING")
             return {"CANCELLED"} 
 
