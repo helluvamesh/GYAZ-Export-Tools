@@ -242,18 +242,8 @@ class SCENE_PT_GYAZ_Export (Panel):
         
         obj = bpy.context.active_object
         if obj is not None:
-            col = lay.column (align=True)
-            col.label (text='Destination:')
-            row = col.row (align=True)
-            row.use_property_split = False
-            row.prop (owner, 'export_folder_mode', expand=True)
-            relative = owner.export_folder_mode == 'RELATIVE_FOLDER'
-            path = '//' + owner.relative_folder_name if relative else owner.export_folder
-            row.operator ('object.gyaz_export_open_folder_in_explorer', text='', icon='VIEWZOOM').path=path
-            if relative:
-                lay.prop (owner, "relative_folder_name")
-            else:
-                lay.prop (owner, "export_folder", text="")   
+            lay.label (text='Destination:')
+            lay.prop (owner, "export_folder", text="")   
             lay.label (text='Asset Type:')
             col = lay.column (align=True)
             col.use_property_split = False

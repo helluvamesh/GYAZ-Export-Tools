@@ -135,26 +135,10 @@ class PG_GYAZ_ExportProps (PropertyGroup):
             ('unlimited', 'Bone Weights: unlimited', '')
             ),
         default=prefs.skeletal_mesh_limit_bone_influences)
-    
-    export_folder_mode: EnumProperty (
-        items=(
-            ('RELATIVE_FOLDER', 'RELATIVE', ''),
-            ('PATH', 'PATH', '')
-            ),
-        default='PATH', description='Relative: export next to the blend file, Path: select a destination')
         
     root_bone_name: StringProperty(name='Root Bone Name', default='root')
     
-    def absolute_path__export_folder (self, context):
-        scene = bpy.context.scene
-        prop = getattr (bpy.context.scene.gyaz_export, "export_folder")
-        new_path = os.path.abspath ( bpy.path.abspath (prop) )
-        if prop.startswith ('//'):
-            bpy.context.scene.gyaz_export.export_folder = new_path
-    
-    export_folder: StringProperty (default='', subtype='DIR_PATH', update=absolute_path__export_folder)
-    
-    relative_folder_name: StringProperty (default='assets', name='Folder', description="Name of relative folder")    
+    export_folder: StringProperty (default='', subtype='DIR_PATH', name='Export folder')
     
     use_anim_object_name_override: BoolProperty (name='Override Object Name', default=False, description="Override the object's name in exported skeletal animations: AnimationPrefix_ObjectName_ActionName")
     

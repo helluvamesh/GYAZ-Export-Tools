@@ -281,15 +281,16 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             if is_str_blank(pack_name):
                 report (self, "Pack name is invalid.", "WARNING")
                 return {"CANCELLED"}
-                    
-                
-        if scene_gyaz_export.export_folder_mode == 'PATH':
-            if root_folder.startswith ('//'):
-                report (self, "Use an absolute path for export folder instead of a relative path.", "WARNING")
-                return {"CANCELLED"}
-            elif not os.path.isdir (root_folder):
-                report (self, "Export path doesn't exist.", "WARNING")
-                return {"CANCELLED"}
+
+        path_exists = False
+        if root_folder.startswith ('//'):
+            root_folder = os.path.abspath ( bpy.path.abspath (root_folder) )
+            path_exists = os.path.isdir(root_folder)
+        else:
+            path_exists = os.path.isdir(root_folder)
+        if not path_exists:
+            report (self, "Export folder (Destination) doesn't exist.", "WARNING")
+            return {"CANCELLED"} 
 
 
         if asset_type == 'ANIMATIONS':
@@ -752,28 +753,12 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
         anims_folder = sn(prefs.anim_folder_name) + '/'
         meshes_folder = sn(prefs.mesh_folder_name) + '/'
 
-        export_folder_mode = scene_gyaz_export.export_folder_mode
-        relative_folder_name = scene_gyaz_export.relative_folder_name
-        export_folder = scene_gyaz_export.export_folder
-
-        #export folder
-        if export_folder_mode == 'RELATIVE_FOLDER':
-            relative_folder_path = "//" + relative_folder_name
-            #make sure it is an absolute path
-            root_folder = os.path.abspath ( bpy.path.abspath (relative_folder_path) )
-            #create relative folder
-            os.makedirs(root_folder, exist_ok=True)
-        
-        elif export_folder_mode == 'PATH':    
-            #make sure it is an absolute path
-            root_folder = os.path.abspath ( bpy.path.abspath (export_folder) )
-
         if asset_type == "STATIC_MESHES" or asset_type == "SKELETAL_MESHES":
             dir = root_folder
         elif asset_type == "ANIMATIONS" or asset_type == "RIGID_ANIMATIONS":
             dir = root_folder + "/" + anims_folder
 
-        scene_gyaz_export.path_to_last_export = os.path.abspath ( bpy.path.abspath (dir) )       
+        scene_gyaz_export.path_to_last_export = dir
 
         ###############################################################
         # SAVE .BLEND FILE BEFORE CHANGING ANYTHING
