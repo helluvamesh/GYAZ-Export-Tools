@@ -444,7 +444,6 @@ class Op_GYAZ_Export_SetNameAsActiveBone (bpy.types.Operator):
         if bpy.context.mode == 'POSE':
             
             bone = bpy.context.active_bone
-            print (bone)
             if bone == None:
                 report (self, 'No active bone.', 'WARNING')
             

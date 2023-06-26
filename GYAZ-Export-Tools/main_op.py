@@ -746,13 +746,13 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
         # EXPORT DIR
         #######################################################
         
-        anims_folder = sn(prefs.anim_folder_name) + '/'
-        meshes_folder = sn(prefs.mesh_folder_name) + '/'
+        anims_folder = sn(prefs.anim_folder_name)
+        meshes_folder = sn(prefs.mesh_folder_name)
 
         if asset_type == "STATIC_MESHES" or asset_type == "SKELETAL_MESHES":
             dir = root_folder
         elif asset_type == "ANIMATIONS" or asset_type == "RIGID_ANIMATIONS":
-            dir = root_folder + "/" + anims_folder
+            dir = os.path.join(root_folder, anims_folder)
 
         scene_gyaz_export.path_to_last_export = dir
 
@@ -1324,7 +1324,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 
                 if len (image_set) > 0:
                     
-                    texture_folder = texture_root + '/' + sn(prefs.texture_folder_name) + '/'
+                    texture_folder = os.path.join(texture_root, sn(prefs.texture_folder_name))
                     os.makedirs (texture_folder, exist_ok=True)
                     
                     image_constants = POD()
@@ -1464,7 +1464,6 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
         bpy.ops.object.mode_set (mode='OBJECT')
         
         pack_name = sn(pack_name)
-        root_folder += '/'
         
         if asset_type == 'STATIC_MESHES':
             
@@ -1476,8 +1475,8 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 suffix = static_mesh_suffix if not pack_name.endswith(static_mesh_suffix) else ''
                 
                 filename = prefix + pack_name + suffix + format
-                folder_path = root_folder + meshes_folder
-                filepath = folder_path + filename
+                folder_path = os.path.join(root_folder, meshes_folder)
+                filepath = os.path.join(folder_path, filename)
                 os.makedirs (folder_path, exist_ok=True)
                 
                 export_objects (filepath, objects = ori_sel_objs)   
@@ -1493,8 +1492,8 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     suffix = static_mesh_suffix if not obj_name.endswith (static_mesh_suffix) else ''
                     
                     filename = prefix + obj_name + suffix + format
-                    folder_path = root_folder + meshes_folder
-                    filepath = folder_path + filename
+                    folder_path = os.path.join(root_folder, meshes_folder)
+                    filepath = os.path.join(folder_path, filename)
                     os.makedirs (folder_path, exist_ok=True)
                     
                     export_objects (filepath, objects = [obj])
@@ -1517,8 +1516,8 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     suffix = skeletal_mesh_suffix if not pack_name.endswith (skeletal_mesh_suffix) else ''
                     
                     filename = prefix + pack_name + suffix + format
-                    folder_path = root_folder + meshes_folder
-                    filepath = folder_path + filename
+                    folder_path = os.path.join(root_folder, meshes_folder)
+                    filepath = os.path.join(folder_path + filename)
                     os.makedirs (folder_path, exist_ok=True)
                     
                     export_objects (filepath, objects = [final_rig] + mesh_children)
@@ -1534,8 +1533,8 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                         suffix = skeletal_mesh_suffix if not child_name.endswith (skeletal_mesh_suffix) else ''
                         
                         filename = prefix + child_name + suffix + format
-                        folder_path = root_folder + meshes_folder
-                        filepath = folder_path + filename
+                        folder_path = os.path.join(root_folder, meshes_folder)
+                        filepath = os.path.join(folder_path, filename)
                         os.makedirs (folder_path, exist_ok=True)
                         
                         export_objects (filepath, objects = [final_rig, child])    
@@ -1560,9 +1559,9 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 
                 fbx_settings.bake_anim = True
 
-                folder_path = root_folder + anims_folder
+                folder_path = os.path_join(root_folder, anims_folder)
                 anim_name = sn(scene_gyaz_export.global_anim_name)
-                filepath = folder_path + animation_prefix + character_name + "_" + anim_name + animation_suffix + format
+                filepath = os.path.join(folder_path, animation_prefix + character_name + "_" + anim_name + animation_suffix + format)
                 os.makedirs (folder_path, exist_ok=True) 
                 
                 baked_action = self.bake_action_from_scene(final_rig, scene_gyaz_export.global_anim_name)
@@ -1598,9 +1597,9 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                         if action not in baked_actions:
                             all_actions.remove(action)
 
-                    folder_path = root_folder + anims_folder
+                    folder_path = os.path.join(root_folder, anims_folder)
                     anim_name = sn(scene_gyaz_export.global_anim_name)
-                    filepath = folder_path + animation_prefix + character_name + separator + anim_name + animation_suffix + format
+                    filepath = os.path.join(folder_path, animation_prefix + character_name + separator + anim_name + animation_suffix + format)
                     os.makedirs (folder_path, exist_ok=True) 
 
                     export_objects (filepath, objects = [final_rig] + mesh_children)
@@ -1609,8 +1608,8 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     for baked_action in baked_actions:
                         
                         action_name = sn(baked_action.name)
-                        folder_path = root_folder + anims_folder
-                        filepath = folder_path + animation_prefix + character_name + separator + action_name + animation_suffix + format
+                        folder_path = os.path.join(root_folder, anims_folder)
+                        filepath = os.path.join(folder_path, animation_prefix + character_name + separator + action_name + animation_suffix + format)
                         os.makedirs (folder_path, exist_ok=True)
                         
                         set_active_action (final_rig, baked_action)
@@ -1642,9 +1641,9 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 
                 prefix = prefix_ if not pack_name.startswith(prefix_) else ''                            
                 suffix = suffix_ if not pack_name.startswith(suffix_) else ''                            
-                folder_path = root_folder + "/" + anims_folder
+                folder_path = os.path.join(root_folder, anims_folder)
                 separator = "_" if pack_name != "" else ""
-                filepath = folder_path + prefix + pack_name + separator + anim_name + suffix + format
+                filepath = os.path.join(folder_path, prefix + pack_name + separator + anim_name + suffix + format)
                 
                 os.makedirs(folder_path, exist_ok=True) 
                 self.set_animation_name(anim_name)
@@ -1661,9 +1660,9 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
 
                     prefix = prefix_ if not obj.name.startswith(prefix_) else ''
                     suffix = suffix_ if not obj.name.startswith(suffix_) else ''
-                    folder_path = root_folder + "/" + anims_folder
+                    folder_path = os.path.join(root_folder, anims_folder)
                     separator = "_" if obj_name != "" else ""
-                    filepath = folder_path + prefix + obj_name + separator + anim_name + suffix + format 
+                    filepath = os.path.join(folder_path, prefix + obj_name + separator + anim_name + suffix + format)
                     
                     self.adjust_scene_to_action_length(get_active_action(obj))
                     self.set_animation_name(anim_name)
@@ -1742,7 +1741,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             prefix = texture_prefix if not new_image.name.startswith (texture_prefix) else ''  
             suffix = texture_suffix if not new_image.name.endswith (texture_suffix) else ''  
                 
-            new_image.filepath = texture_folder + prefix + sn(new_image.name) + suffix + '.' + final_extension
+            new_image.filepath = os.path.join(texture_folder, prefix + sn(new_image.name) + suffix + '.' + final_extension)
             new_image.filepath = os.path.abspath ( bpy.path.abspath (new_image.filepath) )
 
             # color depth
