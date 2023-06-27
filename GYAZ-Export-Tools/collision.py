@@ -45,31 +45,29 @@ class Op_GYAZ_Export_AddCollision (Operator):
         default="BOX"
     )
 
-    use_selection: BoolProperty(name="Selected Vertices Only")
-
     def execute (self, context):
         obj = context.object
         scene = context.scene
 
-        self.use_selection = scene.gyaz_export.collision_use_selection
+        selected_verts_only = scene.gyaz_export.collision_use_selection
         
         collision = None
 
         if self.shape == "BOX":
-            collision = self.generate_box_collision_from_obj_bbox(obj, scene)
+            collision = self.generate_box_collision_from_obj_bbox(obj, scene, selected_verts_only)
 
         elif self.shape == "SPHERE":
-            collision = self.generate_sphere_collision_from_obj_bbox(obj, scene)
+            collision = self.generate_sphere_collision_from_obj_bbox(obj, scene, selected_verts_only)
 
         self.select_collision_obj(collision)
 
         return {'FINISHED'}
 
 
-    def generate_box_collision_from_obj_bbox(self, obj, scene):
+    def generate_box_collision_from_obj_bbox(self, obj, scene, selected_verts_only):
         obj_name = obj.name
         
-        bbox, dimensions = self.get_bbox_and_dimensions_from_obj(obj)
+        bbox, dimensions = self.get_bbox_and_dimensions_from_obj(obj, selected_verts_only)
         
         return self.generate_box_collision(
             bbox, dimensions, scene, obj,
@@ -78,10 +76,10 @@ class Op_GYAZ_Export_AddCollision (Operator):
         )
         
     
-    def generate_sphere_collision_from_obj_bbox(self, obj, scene):
+    def generate_sphere_collision_from_obj_bbox(self, obj, scene, selected_verts_only):
         obj_name = obj.name
         
-        bbox, dimensions = self.get_bbox_and_dimensions_from_obj(obj)
+        bbox, dimensions = self.get_bbox_and_dimensions_from_obj(obj, selected_verts_only)
         
         return self.generate_sphere_collision(
             bbox, dimensions, scene, obj,
@@ -137,11 +135,11 @@ class Op_GYAZ_Export_AddCollision (Operator):
         return sphere_obj
     
     
-    def get_bbox_and_dimensions_from_obj(self, obj):
+    def get_bbox_and_dimensions_from_obj(self, obj, selected_verts_only):
         bm = bmesh.new()
         bm.from_object(obj, bpy.context.evaluated_depsgraph_get(), cage=False, face_normals=False, vertex_normals=False)
         
-        if self.use_selection:
+        if selected_verts_only:
             positions = [vert.co for vert in bm.verts if vert.select]
             if len(positions) < 3:
                 positions = [vert.co for vert in bm.verts]
