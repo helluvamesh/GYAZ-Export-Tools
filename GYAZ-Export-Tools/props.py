@@ -279,6 +279,8 @@ class PG_GYAZ_ExportProps (PropertyGroup):
         default=prefs.target_app
     )
 
+    collision_use_selection: BoolProperty(name="Use Selection", description="Add collision around selected vertices, otherwise around the entire object")
+
     # debug
     show_debug_props: BoolProperty (name='Developer', default=False, description="Show properties for debugging")
     

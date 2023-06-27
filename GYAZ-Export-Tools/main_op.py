@@ -771,12 +771,8 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
         bpy.ops.wm.save_as_mainfile (filepath=blend_path)
             
         ###############################################################
-            
-        # make sure all objects are selectable
-        for obj in scene.objects:
-            obj.hide_select = False
-            obj.hide_viewport = False
-            obj.hide_set(False)
+
+        self.make_every_collection_and_object_visible_in_scene(scene)
         
         # make list of bones to keep    
         if asset_type == 'SKELETAL_MESHES' or asset_type == 'ANIMATIONS':
@@ -807,21 +803,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
         # get root mode    
         if asset_type == 'SKELETAL_MESHES' or asset_type == 'ANIMATIONS':
             root_mode = scene_gyaz_export.root_mode
-            
-            
-        # make all collectios visible
-        for collection in bpy.context.scene.collection.children:
-            # collection.exclude doesn't work
-            try:
-                #collection.exclude = False
-                collection.hide_viewport = False
-                collection.hide_select = False
-                for obj in collection.objects:
-                    obj.hide_viewport, obj.hide_select = False, False
-                    obj.hide_set (False)
-            except:
-                ''
-            
+
         
         length = len (scene_gyaz_export.extra_bones)    
         constraint_extra_bones = scene_gyaz_export.constraint_extra_bones if length > 0 else False
@@ -1684,6 +1666,23 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
         return {'FINISHED'}
 
 
+    def make_every_collection_and_object_visible_in_scene(self, scene):
+        for collection in bpy.context.view_layer.layer_collection.children:
+            self.make_collection_visible_recursive(collection)
+
+        # make sure all objects are selectable
+        for obj in scene.objects:
+            obj.hide_select = False
+            obj.hide_viewport = False
+            obj.hide_set(False)
+
+    def make_collection_visible_recursive(self, collection):
+        collection.exclude = False
+        collection.hide_viewport = False
+        for child in collection.children:
+            self.make_collection_visible_recursive(child)
+
+
     def rename_materials(self, objects, material_prefix, material_suffix):
         scene = bpy.context.scene
         if scene.gyaz_export.use_prefixes:
@@ -1910,7 +1909,6 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
         for mesh in meshes:
             mesh.select_set(True)
         bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
-
 
     def move_root_motion_from_bone_to_object(self, rig, root_bone_name, actions):
         

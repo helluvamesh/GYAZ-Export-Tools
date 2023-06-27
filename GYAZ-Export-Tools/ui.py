@@ -410,12 +410,16 @@ class SCENE_PT_GYAZ_Export_Mesh (Panel):
 
             lay.operator("object.gyaz_export_generate_lods", text="Generate LODs")
 
+            scene = bpy.context.scene
+
             lay.label(text="Collision:")
             row = lay.row(align=True)
+            row.prop(scene.gyaz_export, "collision_use_selection", text="", icon="VERTEXSEL")
             row.operator("object.gyaz_export_add_collision", text="Box").shape = "BOX"
             row.operator("object.gyaz_export_add_collision", text="Sphere").shape = "SPHERE"
+            lay.operator("object.gyaz_export_bake_collision", text="Bake")
 
-            owner = bpy.context.scene.gyaz_export_shapes
+            owner = scene.gyaz_export_shapes
             show = owner.show_props
             row = lay.row(align=True)
             row.prop (owner, 'show_props', icon='TRIA_DOWN' if show else 'TRIA_RIGHT', text="", emboss=False)

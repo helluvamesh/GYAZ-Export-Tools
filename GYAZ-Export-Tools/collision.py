@@ -25,8 +25,8 @@ import bpy, bmesh
 from mathutils import Vector, Matrix
 from math import radians
 from bpy.types import Operator
-from bpy.props import EnumProperty
-from .utils import make_active_only
+from bpy.props import EnumProperty, BoolProperty
+from .utils import make_active_only, get_bbox_and_dimensions, get_dimensions
 
 
 class Op_GYAZ_Export_AddCollision (Operator):
@@ -34,6 +34,7 @@ class Op_GYAZ_Export_AddCollision (Operator):
     bl_idname = "object.gyaz_export_add_collision"  
     bl_label = "GYAZ Export: Add Collision"
     bl_description = "Add a collider shape to the object."
+    bl_options = {"UNDO"}
 
     shape: EnumProperty(
         name="Shape",
@@ -44,10 +45,13 @@ class Op_GYAZ_Export_AddCollision (Operator):
         default="BOX"
     )
 
+    use_selection: BoolProperty(name="Selected Vertices Only")
 
     def execute (self, context):
         obj = context.object
         scene = context.scene
+
+        self.use_selection = scene.gyaz_export.collision_use_selection
         
         collision = None
 
@@ -137,37 +141,16 @@ class Op_GYAZ_Export_AddCollision (Operator):
         bm = bmesh.new()
         bm.from_object(obj, bpy.context.evaluated_depsgraph_get(), cage=False, face_normals=False, vertex_normals=False)
         
-        positions = [vert.co for vert in bm.verts]
-        bbox, dimensions = self.get_bbox_and_dimensions(positions)
+        if self.use_selection:
+            positions = [vert.co for vert in bm.verts if vert.select]
+            if len(positions) < 3:
+                positions = [vert.co for vert in bm.verts]
+        else:
+            positions = [vert.co for vert in bm.verts]
+
+        bbox, dimensions = get_bbox_and_dimensions(positions)
 
         bm.free()
-        return bbox, dimensions
-        
-    
-    def get_bbox_and_dimensions (self, vectors):
-        x_vectors = [vec[0] for vec in vectors]
-        y_vectors = [vec[1] for vec in vectors]
-        z_vectors = [vec[2] for vec in vectors]
-        
-        x_min = min (x_vectors)
-        x_max = max (x_vectors)
-        y_min = min (y_vectors)
-        y_max = max (y_vectors)
-        z_min = min (z_vectors)
-        z_max = max (z_vectors)
-        
-        bbox = (Vector ((x_min, y_min, z_min)),
-                Vector ((x_min, y_min, z_max)),
-                Vector ((x_min, y_max, z_max)),
-                Vector ((x_min, y_max, z_min)),
-                Vector ((x_max, y_min, z_min)),
-                Vector ((x_max, y_min, z_max)),
-                Vector ((x_max, y_max, z_max)),
-                Vector ((x_max, y_max, z_min))
-               )
-        
-        dimensions = Vector((x_max - x_min, y_max - y_min, z_max - z_min))
-        
         return bbox, dimensions
         
     
@@ -201,7 +184,11 @@ class Op_GYAZ_Export_AddCollision (Operator):
 
 
     def select_collision_obj(self, obj):
-        make_active_only(obj)
+        try:
+            make_active_only(obj)
+        except:
+            # object is in a hidden collection
+            pass
 
 
     #when the buttons should show up    
@@ -211,9 +198,48 @@ class Op_GYAZ_Export_AddCollision (Operator):
         return ao and ao.type == "MESH" and context.mode == 'OBJECT'
 
 
+class Op_GYAZ_Export_BakeCollision (Operator):
+
+    bl_idname = "object.gyaz_export_bake_collision"  
+    bl_label = "GYAZ Export: Bake Collision"
+    bl_description = "Remove any rotation the selected objects have."
+    bl_options = {"UNDO"}
+
+    def execute (self, context):
+        
+        for obj in bpy.context.selected_objects:
+            if obj.type == "MESH":
+                mesh = obj.data
+                vertices = mesh.vertices
+                
+                # calc vert positions as if rotation and scale was applied
+                matrix = obj.matrix_world
+                location = Vector(obj.location)
+                original_vert_coords = [Vector(vert.co) for vert in vertices]
+                applied_verts = [(matrix @ co) - location for co in original_vert_coords]
+                obj.matrix_world.identity()
+                obj.location = location
+                
+                # reapply scale
+                dims = get_dimensions(applied_verts)
+                for i in range(0, len(vertices)):
+                    vertices[i].co = original_vert_coords[i]
+                obj.scale = dims
+
+        return {'FINISHED'}
+
+    #when the buttons should show up    
+    @classmethod
+    def poll(cls, context):
+        obj = context.object
+        return obj and obj.type == "MESH" and context.mode == 'OBJECT'
+
+
 def register():
     bpy.utils.register_class (Op_GYAZ_Export_AddCollision)
+    bpy.utils.register_class (Op_GYAZ_Export_BakeCollision)
 
 
 def unregister():
     bpy.utils.unregister_class (Op_GYAZ_Export_AddCollision)
+    bpy.utils.unregister_class (Op_GYAZ_Export_BakeCollision)

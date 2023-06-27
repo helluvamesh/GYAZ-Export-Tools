@@ -1,6 +1,10 @@
 import bpy, re
 import numpy as np
-from mathutils import Matrix
+from mathutils import Matrix, Vector
+
+
+class POD:
+    pass
 
 
 def report (self, item, error_or_info):
@@ -164,5 +168,43 @@ def set_bone_parent(ebones, name, parent_name):
             ebone.parent = ebones.get(parent_name)
 
 
-class POD:
-    pass
+def get_bbox_and_dimensions (vectors):
+    x_vectors = [vec[0] for vec in vectors]
+    y_vectors = [vec[1] for vec in vectors]
+    z_vectors = [vec[2] for vec in vectors]
+    
+    x_min = min (x_vectors)
+    x_max = max (x_vectors)
+    y_min = min (y_vectors)
+    y_max = max (y_vectors)
+    z_min = min (z_vectors)
+    z_max = max (z_vectors)
+    
+    bbox = (Vector ((x_min, y_min, z_min)),
+            Vector ((x_min, y_min, z_max)),
+            Vector ((x_min, y_max, z_max)),
+            Vector ((x_min, y_max, z_min)),
+            Vector ((x_max, y_min, z_min)),
+            Vector ((x_max, y_min, z_max)),
+            Vector ((x_max, y_max, z_max)),
+            Vector ((x_max, y_max, z_min))
+            )
+    
+    dimensions = Vector((x_max - x_min, y_max - y_min, z_max - z_min))
+    
+    return bbox, dimensions
+
+
+def get_dimensions(vectors):
+    x_vectors = [vec[0] for vec in vectors]
+    y_vectors = [vec[1] for vec in vectors]
+    z_vectors = [vec[2] for vec in vectors]
+    
+    x_min = min (x_vectors)
+    x_max = max (x_vectors)
+    y_min = min (y_vectors)
+    y_max = max (y_vectors)
+    z_min = min (z_vectors)
+    z_max = max (z_vectors)
+    
+    return x_max - x_min, y_max - y_min, z_max - z_min
