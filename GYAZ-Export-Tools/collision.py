@@ -26,7 +26,7 @@ from mathutils import Vector, Matrix
 from math import radians
 from bpy.types import Operator
 from bpy.props import EnumProperty, BoolProperty
-from .utils import make_active_only, get_bbox_and_dimensions, get_dimensions
+from .utils import make_active_only, get_bbox_and_dimensions, bake_collision_object
 
 
 class Op_GYAZ_Export_AddCollision (Operator):
@@ -200,29 +200,14 @@ class Op_GYAZ_Export_BakeCollision (Operator):
 
     bl_idname = "object.gyaz_export_bake_collision"  
     bl_label = "GYAZ Export: Bake Collision"
-    bl_description = "Remove any rotation the selected objects have."
+    bl_description = "Remove rotation form selected collision objects keeping scale intact."
     bl_options = {"UNDO"}
 
     def execute (self, context):
         
         for obj in bpy.context.selected_objects:
             if obj.type == "MESH":
-                mesh = obj.data
-                vertices = mesh.vertices
-                
-                # calc vert positions as if rotation and scale was applied
-                matrix = obj.matrix_world
-                location = Vector(obj.location)
-                original_vert_coords = [Vector(vert.co) for vert in vertices]
-                applied_verts = [(matrix @ co) - location for co in original_vert_coords]
-                obj.matrix_world.identity()
-                obj.location = location
-                
-                # reapply scale
-                dims = get_dimensions(applied_verts)
-                for i in range(0, len(vertices)):
-                    vertices[i].co = original_vert_coords[i]
-                obj.scale = dims
+                bake_collision_object(obj)
 
         return {'FINISHED'}
 

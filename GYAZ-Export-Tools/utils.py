@@ -208,3 +208,23 @@ def get_dimensions(vectors):
     z_max = max (z_vectors)
     
     return x_max - x_min, y_max - y_min, z_max - z_min
+
+
+# remove rotation form selected collision objects keeping scale intact
+def bake_collision_object(obj):
+    mesh = obj.data
+    vertices = mesh.vertices
+    
+    # calc vert positions as if rotation and scale was applied
+    matrix = obj.matrix_world
+    location = Vector(obj.location)
+    original_vert_coords = [Vector(vert.co) for vert in vertices]
+    applied_verts = [(matrix @ co) - location for co in original_vert_coords]
+    obj.matrix_world.identity()
+    obj.location = location
+    
+    # reapply scale
+    dims = get_dimensions(applied_verts)
+    for i in range(0, len(vertices)):
+        vertices[i].co = original_vert_coords[i]
+    obj.scale = dims

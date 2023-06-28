@@ -28,7 +28,8 @@ from bpy.props import EnumProperty
 from .utils import report, popup, list_to_visual_list, make_active_only, sn, get_active_action, \
     is_str_blank, detect_mirrored_uvs, clear_transformation, clear_transformation_matrix, \
     gather_images_from_nodes, clear_blender_collection, set_active_action, POD, remove_dot_plus_three_numbers, \
-    make_lod_object_name_pattern, get_name_and_lod_index, set_bone_parent, make_active
+    make_lod_object_name_pattern, get_name_and_lod_index, set_bone_parent, make_active, \
+    bake_collision_object
 
 
 prefs = bpy.context.preferences.addons[__package__].preferences
@@ -888,6 +889,11 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                             if clear_transforms:
                                 clear_transformation(lod)             
                         
+
+        # bake collision
+        for collision in collision_objects:
+            if collision.name.startswith("UBX_") or collision.name.startswith("UCP_"):
+                bake_collision_object(collision)
 
         #######################################################
         # REPLACE SKELETAL MESHES WITH CUBES
