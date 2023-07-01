@@ -113,7 +113,6 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
         action_export_mode = scene_gyaz_export.action_export_mode
         rigid_anim_cubes = scene_gyaz_export.rigid_anim_cubes and not pack_objects
         root_bone_name = scene_gyaz_export.root_bone_name
-        export_sockets = scene_gyaz_export.export_sockets
 
         ###############################################################
         # GATHER OBJECTS FROM COLLECTIONS
@@ -224,7 +223,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
         mesh_children = list(set(mesh_children) - lod_set)
             
         ###############################################################
-        # GATHER COLLISION
+        # GATHER COLLISION & SOCKETS
         ############################################################### 
 
         export_collision = scene_gyaz_export.export_collision
@@ -254,6 +253,32 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                          
             ori_sel_objs = list ( set (ori_sel_objs) - collision_objs_ori )
             meshes_to_export = list ( set (meshes_to_export) - collision_objs_ori )
+
+        export_sockets = scene_gyaz_export.export_sockets
+        socket_info = {}
+
+        if scene_gyaz_export.target_app == "UNREAL":
+            # gather and rescale sockets (single bone armature objects)
+            for obj in ori_sel_objs:
+                for child in obj.children:
+                    if child.type == 'ARMATURE' and child.name.startswith ('SOCKET_'):
+                        child.scale *= .01
+                        if child.rotation_mode != 'QUATERNION':
+                            child.rotation_mode = 'QUATERNION'
+                        child.rotation_quaternion = child.rotation_quaternion @ Quaternion((0.707, 0.707, .0, .0))
+                        sockets.append (child)
+
+        elif scene_gyaz_export.target_app == "UNITY":
+            if asset_type == 'STATIC_MESHES':
+                for obj in ori_sel_objs:
+                    name = obj.name
+                    for child in obj.children:
+                        if child.type == 'EMPTY' and child.name.startswith ('SOCKET_'):
+                            socket_objs = socket_info.get(name)
+                            if socket_objs is None:
+                                socket_objs = []
+                                socket_info[name] = socket_objs
+                            socket_objs.append(child)
 
         ###############################################################
         # HIGH-LEVEL CHECKS
@@ -856,27 +881,11 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                                 collision.parent = obj
                                 collision.matrix_parent_inverse = obj.matrix_world.inverted ()
             
-                
-            export_sockets = scene_gyaz_export.export_sockets
             if export_sockets:
                 
-                # gather and rescale sockets (single bone armature objects)
-                if scene_gyaz_export.target_app == "UNREAL":
-                    for obj in ori_sel_objs:
-                        for child in obj.children:
-                            if child.type == 'ARMATURE' and child.name.startswith ('SOCKET_'):
-                                child.scale *= .01
-                                if child.rotation_mode != 'QUATERNION':
-                                    child.rotation_mode = 'QUATERNION'
-                                child.rotation_quaternion = child.rotation_quaternion @ Quaternion((0.707, 0.707, .0, .0))
-                                sockets.append (child)
-
-                elif scene_gyaz_export.target_app == "UNITY":
-                    if asset_type == 'STATIC_MESHES':
-                        for obj in ori_sel_objs:
-                            for child in obj.children:
-                                if child.type == 'EMPTY' and child.name.startswith ('SOCKET_'):
-                                    sockets.append (child)
+                for socket_objs in socket_info.values():
+                    for socket_obj in socket_objs:
+                        sockets.append(socket_obj)
             
             # clear lod transform
             if export_lods:
@@ -888,12 +897,6 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                         for lod in lods:
                             if clear_transforms:
                                 clear_transformation(lod)             
-                        
-
-        # bake collision
-        for collision in collision_objects:
-            if collision.name.startswith("UBX_") or collision.name.startswith("UCP_"):
-                bake_collision_object(collision)
 
         #######################################################
         # REPLACE SKELETAL MESHES WITH CUBES
@@ -1290,7 +1293,10 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     
                 if mesh.shape_keys is not None:
                     for key in mesh.shape_keys.key_blocks:
-                        obj.shape_key_remove (key)            
+                        obj.shape_key_remove (key)
+                
+                if collision.name.startswith("UBX_") or collision.name.startswith("UCP_"):
+                    bake_collision_object(collision)
 
 
         ###########################################################
@@ -1355,12 +1361,15 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
         # EXPORT OBJECTS FUNCTION 
         ###########################################################       
             
-        def export_objects (filepath, objects, collision_objects=collision_objects, sockets=sockets):
+        def export_objects (filepath, objects):
             bpy.ops.object.mode_set (mode='OBJECT')
             bpy.ops.object.select_all (action='DESELECT')
-            
+
             if len (objects) > 0:            
                 
+                collision_objects = self.get_collision_objects_from_collision_info(objects, collision_info)
+                sockets = self.get_socket_objects_from_socket_info(objects, socket_info)
+
                 ex_tex = scene_gyaz_export.export_textures
                 ex_tex_only = scene_gyaz_export.export_only_textures
                     
@@ -1671,6 +1680,23 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
         
         return {'FINISHED'}
 
+    def get_collision_objects_from_collision_info(self, objects, collision_info):
+        collision_objects = []
+        for object in objects:
+            infos = collision_info.get(object.name)
+            if infos is not None:
+                for info in infos:
+                    collision_objects.append(info[0])
+        return collision_objects
+
+    def get_socket_objects_from_socket_info(self, objects, socket_info):
+        socket_objects = []
+        for object in objects:
+            sockets = socket_info.get(object.name)
+            if sockets is not None:
+                for socket in sockets:
+                    socket_objects.append(socket)
+        return socket_objects
 
     def make_every_collection_and_object_visible_in_scene(self, scene):
         for collection in bpy.context.view_layer.layer_collection.children:
