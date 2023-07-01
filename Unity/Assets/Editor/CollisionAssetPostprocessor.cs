@@ -42,12 +42,42 @@ public class CollisionAssetPostprocessor : AssetPostprocessor
         Debug.Log("CollisionAssetPostprocessor finished");
     }
 
+    // remove .### ending from socket objects
+    private void RenameSocketObject(GameObject gameObject)
+    {
+        string objName = gameObject.name;
+        if (objName.StartsWith("SOCKET_"))
+        {
+            bool shouldRename = false;
+            int nameLen = objName.Length;
+            if (nameLen > 4)
+            {
+                if (objName[nameLen - 4] == '.')
+                {
+                    for (int i = nameLen - 3; i < nameLen; ++i)
+                    {
+                        if (char.IsDigit(objName[i]))
+                        {
+                            shouldRename = true;
+                        }
+                    }
+                }
+            }
+            if (shouldRename)
+            {
+                gameObject.name = objName.Substring(0, nameLen - 4);
+            }
+        }
+    }
+
     private void AddCollider(Transform t, List<Transform> transformsToDestroy)
     {
         foreach (Transform child in t.transform)
         {
             AddCollider(child, transformsToDestroy);
         }
+
+        RenameSocketObject(t.gameObject);
 
         string meshName;
         if (t.gameObject.TryGetComponent(out MeshFilter meshFilter))
