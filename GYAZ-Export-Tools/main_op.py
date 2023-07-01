@@ -1295,8 +1295,9 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     for key in mesh.shape_keys.key_blocks:
                         obj.shape_key_remove (key)
                 
-                if collision.name.startswith("UBX_") or collision.name.startswith("UCP_"):
-                    bake_collision_object(collision)
+                name = obj.name
+                if name.startswith("UBX_") or name.startswith("UCP_"):
+                    bake_collision_object(obj)
 
 
         ###########################################################
