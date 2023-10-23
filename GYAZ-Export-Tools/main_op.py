@@ -61,8 +61,10 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
         space = bpy.context.space_data
         scene_gyaz_export = scene.gyaz_export
 
-        target_cm_scale_unit = scene_gyaz_export.target_app == "UNREAL"
-        target_y_up_z_forward = scene_gyaz_export.target_app == "UNITY"
+        target_unreal = scene_gyaz_export.target_app == "UNREAL"
+        target_unity = scene_gyaz_export.target_app == "UNITY"
+        target_cm_scale_unit = target_unreal
+        target_y_up_z_forward = target_unity
         
         scene_objects = scene.objects
         ori_ao = bpy.context.active_object
@@ -157,13 +159,13 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
         ############################################################### 
         
         asset_type_with_lod = False
-        if scene_gyaz_export.target_app == "UNREAL":
+        if target_unreal:
             # exporting skeletal mesh lods in the same file with lod0 results in 
             # lods being exported in the wrong order in Unreal 4 (lod0, lod3, lod2, lod1)
             # so skeletal mesh lods should be exported in separate files
             # and imported one by one
             asset_type_with_lod = asset_type == 'STATIC_MESHES'
-        elif scene_gyaz_export.target_app == "UNITY":
+        elif target_unity:
             asset_type_with_lod = True
         export_lods = asset_type_with_lod and scene_gyaz_export.export_lods
 
@@ -257,18 +259,18 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
         export_sockets = scene_gyaz_export.export_sockets
         socket_info = {}
 
-        if scene_gyaz_export.target_app == "UNREAL":
-            # gather and rescale sockets (single bone armature objects)
+        if target_unreal:
             for obj in ori_sel_objs:
+                name = obj.name
                 for child in obj.children:
-                    if child.type == 'ARMATURE' and child.name.startswith ('SOCKET_'):
-                        child.scale *= .01
-                        if child.rotation_mode != 'QUATERNION':
-                            child.rotation_mode = 'QUATERNION'
-                        child.rotation_quaternion = child.rotation_quaternion @ Quaternion((0.707, 0.707, .0, .0))
-                        sockets.append (child)
+                    if child.type == 'EMPTY' and child.name.startswith ('SOCKET_'):
+                        socket_objs = socket_info.get(name)
+                        if socket_objs is None:
+                            socket_objs = []
+                            socket_info[name] = socket_objs
+                        socket_objs.append(child)
 
-        elif scene_gyaz_export.target_app == "UNITY":
+        elif target_unity:
             if asset_type == 'STATIC_MESHES':
                 for obj in ori_sel_objs:
                     name = obj.name
@@ -674,7 +676,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
         # EXPORT OPERATOR PROPS
         #######################################################
         
-        static_meshes_for_unity = scene_gyaz_export.target_app == "UNITY" and (asset_type == "STATIC_MESHES" or asset_type == "RIGID_ANIMATIONS")
+        static_meshes_for_unity = target_unreal and (asset_type == "STATIC_MESHES" or asset_type == "RIGID_ANIMATIONS")
 
         fbx_settings = POD()
         # MAIN
@@ -683,10 +685,10 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
         fbx_settings.global_scale = 1
         fbx_settings.apply_unit_scale = False
         fbx_settings.apply_scale_options = 'FBX_SCALE_NONE' if target_cm_scale_unit else 'FBX_SCALE_ALL'
-        fbx_settings.axis_forward = '-Z'
-        fbx_settings.axis_up = 'Y'
+        fbx_settings.axis_forward = "-X" if target_unreal else "-Z"
+        fbx_settings.axis_up = "Z" if target_unreal else 'Y'
         fbx_settings.object_types = {'EMPTY', 'CAMERA', 'LIGHT', 'ARMATURE', 'MESH', 'OTHER'}
-        fbx_settings.use_space_transform = static_meshes_for_unity
+        fbx_settings.use_space_transform = target_unreal or static_meshes_for_unity
         fbx_settings.bake_space_transform = static_meshes_for_unity
         fbx_settings.use_custom_props = False
         
@@ -1385,7 +1387,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                             lods = lod_info_tuple[0]
                             obj_name_wo_lod = lod_info_tuple[1]
                             if len(lods) > 0:
-                                if scene_gyaz_export.target_app == "UNREAL":
+                                if target_unreal:
                                     empty = bpy.data.objects.new (name='LOD_' + obj_name_wo_lod, object_data=None)
                                     empty['fbx_type'] = 'LodGroup'
                                     scene.collection.objects.link (empty)
@@ -1396,13 +1398,17 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                                         final_selected_objects.append (lod)
                                         final_selected_objects.append (empty)
 
-                                elif scene_gyaz_export.target_app == "UNITY":
+                                elif target_unity:
                                     for lod in lods + [obj]:
                                         final_selected_objects.append (lod)
                                     obj.name = obj_name_wo_lod + "_LOD0"
 
                             else:
                                 final_selected_objects.append (obj)
+
+                if export_sockets and target_unreal:
+                    for socket in sockets:
+                        socket.scale = (1, 1, 1)
 
                 do_export = False
                 if asset_type == 'STATIC_MESHES' or asset_type == 'SKELETAL_MESHES':

@@ -213,7 +213,7 @@ class PG_GYAZ_ExportProps (PropertyGroup):
     
     export_collision: BoolProperty (default=True, name='Collision', description='Prefixes: UBX (box), USP (sphere), UCP (capsule), UCX (convex). Example: Object --> UBX_Object, UBX_Object.001. Collision (mesh) objects are gathered automatically and should not be selected')
     
-    export_sockets: BoolProperty (default=True, name='Sockets', description='Unreal: Sockets are single-bone armature objects parented to the object and only work if a file only contains one object. Scale is ignored. Unity: Sockets are empty objects parented to the object, only for static meshes. Prefix: SOCKET_, Example: Object --> SOCKET_anything. Sockets are gathered automatically and should not be selected.')
+    export_sockets: BoolProperty (default=True, name='Sockets', description='Unreal: Sockets are empty objects parented to the object and only work if a file only contains one object. Scale is ignored. Unity: Sockets are empty objects parented to the object, only for static meshes. Prefix: SOCKET_, Example: Object --> SOCKET_anything. Sockets are gathered automatically and should not be selected.')
     
     export_lods: BoolProperty (default=True, name='LODs', description='Suffix: Obj or Obj_LOD0 --> Obj_LOD1, Obj_LOD2. LODs are gathered automatically and should not be selected. For Unreal only static mesh LODs are exported.')
     
