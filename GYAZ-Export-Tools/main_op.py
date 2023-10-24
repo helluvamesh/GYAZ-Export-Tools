@@ -27,7 +27,7 @@ from pathlib import Path
 from bpy.props import EnumProperty
 from .utils import report, popup, list_to_visual_list, make_active_only, sn, get_active_action, \
     is_str_blank, detect_mirrored_uvs, clear_transformation, clear_transformation_matrix, \
-    gather_images_from_nodes, clear_blender_collection, set_active_action, POD, remove_dot_plus_three_numbers, \
+    gather_images_from_material, clear_blender_collection, set_active_action, POD, remove_dot_plus_three_numbers, \
     make_lod_object_name_pattern, get_name_and_lod_index, set_bone_parent, make_active, \
     bake_collision_object
 
@@ -435,6 +435,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
         shapes_and_mods = []
         
         image_info = {}
+        image_nodes = set()
 
         max_face_vert_count = 0
         poly_warning = ""
@@ -541,21 +542,19 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     
                 # textures
                 # get list of texture images
+                images = set()
+                image_nodes = set()
+                for material in materials:
+                    if material is not None:
+                        gather_images_from_material(material, images, image_nodes)
+
                 if scene_gyaz_export.export_textures:
-                    
-                    images = set()
-                    for material in materials:
-                        if material is not None:
-                            node_tree = material.node_tree
-                            if node_tree is not None:
-                                images = images.union( gather_images_from_nodes(node_tree) )
-                                                                                                                                                                            
                     image_info[obj] = images
         
-        
-        image_set = set ()
+        image_set = set()
         for obj in image_info:
-            image_set = image_set.union(image_info[obj])
+            for image in image_info[obj]:
+                image_set.add(image)
         
         if asset_type != 'ANIMATIONS':
             if scene_gyaz_export.export_textures:           
@@ -1301,6 +1300,14 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 if name.startswith("UBX_") or name.startswith("UCP_"):
                     bake_collision_object(obj)
 
+
+        ############################################################
+        # REMOVE IMAGES FROM EXPORTED MATERIALS 
+        ############################################################
+
+        # don't want the fbx file to refrence images
+        for image_node in image_nodes:
+            image_node.image = None
 
         ###########################################################
         # TEXTURE FUNCTIONS

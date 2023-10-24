@@ -81,19 +81,19 @@ def clear_transformation_matrix (object):
     object.matrix_world = Matrix()
 
 
-def _gather_images(node_tree, images):
+def _gather_images_from_nodes(node_tree, gathered_images, gathered_image_nodes):
     for node in node_tree.nodes:
         if node.type == 'TEX_IMAGE' or node.type == 'TEX_ENVIRONMENT':
-            images.add(node.image)
+            gathered_images.add(node.image)
+            gathered_image_nodes.add(node)
         elif node.type == 'GROUP':
-            _gather_images(node.node_tree, images)
+            _gather_images_from_nodes(node.node_tree, gathered_images)
 
 
-# get set of texture images in node tree
-def gather_images_from_nodes (node_tree):
-    images = set()
-    _gather_images(node_tree, images)
-    return set (images)
+def gather_images_from_material(material, gathered_images, gathered_image_nodes):
+    node_tree = material.node_tree
+    if node_tree is not None:
+        _gather_images_from_nodes(node_tree, gathered_images, gathered_image_nodes)
 
 
 def reset_all_pose_bones(rig):
