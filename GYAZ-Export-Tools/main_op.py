@@ -1074,8 +1074,8 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                     pbone.constraints.remove (c)
 
             # make all bones visible
-            for n in range (0, 32):
-                final_rig_data.layers[n] = True
+            for bone_collection in final_rig_data.collections:
+                bone_collection.is_visible = True
             for bone in final_rig_data.bones:
                 bone.hide = False
                     
