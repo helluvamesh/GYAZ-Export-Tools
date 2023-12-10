@@ -87,7 +87,7 @@ def _gather_images_from_nodes(node_tree, gathered_images, gathered_image_nodes):
             gathered_images.add(node.image)
             gathered_image_nodes.add(node)
         elif node.type == 'GROUP':
-            _gather_images_from_nodes(node.node_tree, gathered_images)
+            _gather_images_from_nodes(node.node_tree, gathered_images, gathered_image_nodes)
 
 
 def gather_images_from_material(material, gathered_images, gathered_image_nodes):
