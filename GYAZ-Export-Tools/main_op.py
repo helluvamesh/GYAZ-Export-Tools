@@ -1282,6 +1282,8 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                             atlas_material = bpy.data.materials.new (name=atlas_name)
                         obj.material_slots[not_excluded_material_idx].material = atlas_material
 
+                mesh.update()
+
             
         # collision         
         for obj in collision_objects:
