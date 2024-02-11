@@ -513,9 +513,10 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                         mirrored_uvs_found = False
                         mirrored_indices = []
                         for n in range (len(mesh.uv_layers)):
-                            mirrored_uvs_found = detect_mirrored_uvs (bm, uv_index=n)
-                            if mirrored_uvs_found:
-                                mirrored_indices.append (str(n))
+                            if mesh.gyaz_export.uv_export[n]:
+                                mirrored_uvs_found = detect_mirrored_uvs (bm, uv_index=n)
+                                if mirrored_uvs_found:
+                                    mirrored_indices.append (str(n))
                             
                         if mirrored_uvs_found:
                             mirrored_uv_objects.append (obj.name + ' (' + list_to_visual_list(mirrored_indices) + ')')
