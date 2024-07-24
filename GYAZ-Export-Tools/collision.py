@@ -25,7 +25,7 @@ import bpy, bmesh
 from mathutils import Vector, Matrix
 from math import radians
 from bpy.types import Operator
-from bpy.props import EnumProperty, BoolProperty
+from bpy.props import EnumProperty
 from .utils import make_active_only, get_bbox_and_dimensions, bake_collision_object
 
 

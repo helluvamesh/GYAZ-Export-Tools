@@ -21,7 +21,7 @@
 ##########################################################################################################
 
 
-import bpy, os
+import bpy
 from bpy.types import PropertyGroup, Scene, Object
 from bpy.props import BoolProperty, StringProperty, EnumProperty, IntProperty, FloatProperty, CollectionProperty, PointerProperty
 
@@ -213,9 +213,9 @@ class PG_GYAZ_ExportProps (PropertyGroup):
     
     export_collision: BoolProperty (default=True, name='Collision', description='Prefixes: UBX (box), USP (sphere), UCP (capsule), UCX (convex). Example: Object --> UBX_Object, UBX_Object.001. Collision (mesh) objects are gathered automatically and should not be selected')
     
-    export_sockets: BoolProperty (default=True, name='Sockets', description='Unreal: Sockets are empty objects parented to the object and only work if a file only contains one object. Scale is ignored. Unity: Sockets are empty objects parented to the object, only for static meshes. Prefix: SOCKET_, Example: Object --> SOCKET_anything. Sockets are gathered automatically and should not be selected.')
+    export_sockets: BoolProperty (default=True, name='Sockets', description='Sockets are empty objects parented to the object and only work if a file only contains one object. Scale is ignored. Prefix: SOCKET_, Example: Object --> SOCKET_anything. Sockets are gathered automatically and should not be selected')
     
-    export_lods: BoolProperty (default=True, name='LODs', description='Suffix: Obj or Obj_LOD0 --> Obj_LOD1, Obj_LOD2. LODs are gathered automatically and should not be selected. For Unreal only static mesh LODs are exported.')
+    export_lods: BoolProperty (default=True, name='LODs', description='Suffix: Obj or Obj_LOD0 --> Obj_LOD1, Obj_LOD2. LODs are gathered automatically and should not be selected. Only static mesh LODs are exported')
     
     ignore_missing_second_uv_map: BoolProperty (default=False, name='Ignore 2nd UV Check')
     
@@ -269,15 +269,6 @@ class PG_GYAZ_ExportProps (PropertyGroup):
             ('-Y', 'Secondary Bone Axis: -Y', ''),
             ('-Z', 'Secondary Bone Axis: -Z', '')),
         default=prefs.secondary_bone_axis)
-
-    target_app: EnumProperty (
-        name="Target App",
-        items=(
-            ("UNREAL", "Unreal", ""),
-            ("UNITY", "Unity", "")
-        ),
-        default=prefs.target_app
-    )
 
     collision_use_selection: BoolProperty(name="Use Selection", description="Add collision around selected vertices, otherwise around the entire object")
 

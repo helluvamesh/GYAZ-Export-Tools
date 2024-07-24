@@ -21,10 +21,10 @@
 ##########################################################################################################
 
 import bpy, os, bmesh
-from mathutils import Vector, Matrix, Quaternion
-from math import radians
+from mathutils import Vector
 from pathlib import Path
 from bpy.props import EnumProperty
+from bpy.types import Operator
 from .utils import report, popup, list_to_visual_list, make_active_only, sn, get_active_action, \
     is_str_blank, detect_mirrored_uvs, clear_transformation, clear_transformation_matrix, \
     gather_images_from_material, clear_blender_collection, set_active_action, POD, remove_dot_plus_three_numbers, \
@@ -36,7 +36,7 @@ prefs = bpy.context.preferences.addons[__package__].preferences
 
     
 # main ops    
-class Op_GYAZ_Export_Export (bpy.types.Operator):
+class Op_GYAZ_Export_Export (Operator):
        
     bl_idname = "object.gyaz_export_export"  
     bl_label = "GYAZ Export: Export"
@@ -60,11 +60,6 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
         scene = bpy.context.scene
         space = bpy.context.space_data
         scene_gyaz_export = scene.gyaz_export
-
-        target_unreal = scene_gyaz_export.target_app == "UNREAL"
-        target_unity = scene_gyaz_export.target_app == "UNITY"
-        target_cm_scale_unit = target_unreal
-        target_y_up_z_forward = target_unity
         
         scene_objects = scene.objects
         ori_ao = bpy.context.active_object
@@ -158,15 +153,11 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
         # GATHER LODs
         ############################################################### 
         
-        asset_type_with_lod = False
-        if target_unreal:
-            # exporting skeletal mesh lods in the same file with lod0 results in 
-            # lods being exported in the wrong order in Unreal 4 (lod0, lod3, lod2, lod1)
-            # so skeletal mesh lods should be exported in separate files
-            # and imported one by one
-            asset_type_with_lod = asset_type == 'STATIC_MESHES'
-        elif target_unity:
-            asset_type_with_lod = True
+        # exporting skeletal mesh lods in the same file with lod0 results in 
+        # lods being exported in the wrong order in Unreal (lod0, lod3, lod2, lod1)
+        # so skeletal mesh lods should be exported in separate files
+        # and imported one by one
+        asset_type_with_lod = asset_type == 'STATIC_MESHES'
         export_lods = asset_type_with_lod and scene_gyaz_export.export_lods
 
         lod_pattern = make_lod_object_name_pattern()
@@ -259,28 +250,15 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
         export_sockets = scene_gyaz_export.export_sockets
         socket_info = {}
 
-        if target_unreal:
-            for obj in ori_sel_objs:
-                name = obj.name
-                for child in obj.children:
-                    if child.type == 'EMPTY' and child.name.startswith ('SOCKET_'):
-                        socket_objs = socket_info.get(name)
-                        if socket_objs is None:
-                            socket_objs = []
-                            socket_info[name] = socket_objs
-                        socket_objs.append(child)
-
-        elif target_unity:
-            if asset_type == 'STATIC_MESHES':
-                for obj in ori_sel_objs:
-                    name = obj.name
-                    for child in obj.children:
-                        if child.type == 'EMPTY' and child.name.startswith ('SOCKET_'):
-                            socket_objs = socket_info.get(name)
-                            if socket_objs is None:
-                                socket_objs = []
-                                socket_info[name] = socket_objs
-                            socket_objs.append(child)
+        for obj in ori_sel_objs:
+            name = obj.name
+            for child in obj.children:
+                if child.type == 'EMPTY' and child.name.startswith ('SOCKET_'):
+                    socket_objs = socket_info.get(name)
+                    if socket_objs is None:
+                        socket_objs = []
+                        socket_info[name] = socket_objs
+                    socket_objs.append(child)
 
         ###############################################################
         # HIGH-LEVEL CHECKS
@@ -676,20 +654,18 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
         # EXPORT OPERATOR PROPS
         #######################################################
         
-        static_meshes_for_unity = target_unreal and (asset_type == "STATIC_MESHES" or asset_type == "RIGID_ANIMATIONS")
-
         fbx_settings = POD()
         # MAIN
         fbx_settings.use_selection = True
         fbx_settings.use_active_collection = False
         fbx_settings.global_scale = 1
         fbx_settings.apply_unit_scale = False
-        fbx_settings.apply_scale_options = 'FBX_SCALE_NONE' if target_cm_scale_unit else 'FBX_SCALE_ALL'
-        fbx_settings.axis_forward = "-X" if target_unreal else "-Z"
-        fbx_settings.axis_up = "Z" if target_unreal else 'Y'
+        fbx_settings.apply_scale_options = 'FBX_SCALE_NONE'
+        fbx_settings.axis_forward = "-X"
+        fbx_settings.axis_up = "Z"
         fbx_settings.object_types = {'EMPTY', 'CAMERA', 'LIGHT', 'ARMATURE', 'MESH', 'OTHER'}
-        fbx_settings.use_space_transform = target_unreal or static_meshes_for_unity
-        fbx_settings.bake_space_transform = static_meshes_for_unity
+        fbx_settings.use_space_transform = True
+        fbx_settings.bake_space_transform = asset_type == "STATIC_MESHES" or asset_type == "RIGID_ANIMATIONS"
         fbx_settings.use_custom_props = False
         
         # 'STRIP' is the only mode textures are not referenced in the fbx file (only referenced not copied - this is undesirable behavior)
@@ -1081,16 +1057,15 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 bone.hide = False
                     
             # make sure bones export with correct scale
-            if target_cm_scale_unit:
-                bpy.ops.object.mode_set (mode='OBJECT')
-                final_rig.scale = (100, 100, 100)
-                bpy.ops.object.transform_apply (location=False, rotation=False, scale=True, properties=False)
-                final_rig.delta_scale = (0.01, 0.01, 0.01)
-            
-                for child in mesh_children:
-                    child.delta_scale[0] *= 100
-                    child.delta_scale[1] *= 100
-                    child.delta_scale[2] *= 100
+            bpy.ops.object.mode_set (mode='OBJECT')
+            final_rig.scale = (100, 100, 100)
+            bpy.ops.object.transform_apply (location=False, rotation=False, scale=True, properties=False)
+            final_rig.delta_scale = (0.01, 0.01, 0.01)
+        
+            for child in mesh_children:
+                child.delta_scale[0] *= 100
+                child.delta_scale[1] *= 100
+                child.delta_scale[2] *= 100
 
             # bind meshes to the final rig
             for child in mesh_children:
@@ -1106,14 +1081,14 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             
                 # constraint 'export bones'        
                 for name in export_bone_list:
-                    self.constraint_bone(final_rig, name, ori_ao, name, target_cm_scale_unit)
+                    self.constraint_bone(final_rig, name, ori_ao, name)
                 
                 # constraint 'extra bones'
                 if constraint_extra_bones:                                                                                     
                     for item in scene_gyaz_export.extra_bones:
                         new_name = item.name
                         source_name = item.source    
-                        self.constraint_bone(final_rig, new_name, ori_ao, source_name, target_cm_scale_unit)            
+                        self.constraint_bone(final_rig, new_name, ori_ao, source_name)            
                 
                 # constraint root
                 if root_mode == 'BONE':
@@ -1133,32 +1108,27 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 c.owner_space = "LOCAL"
                 c.target_space = "LOCAL_OWNER_ORIENT"
                 
-                if target_cm_scale_unit:
-                    c = root_pbone.constraints.new (type='TRANSFORM')
-                    c.target = ori_ao
-                    c.subtarget = subtarget
-                    c.use_motion_extrapolate = True
-                    c.map_from = 'SCALE'
-                    c.map_to = 'SCALE'
-                    c.map_to_x_from = 'X'
-                    c.map_to_y_from = 'Y'
-                    c.map_to_z_from = 'Z'
-                    c.from_min_x_scale = -1
-                    c.from_max_x_scale = 1
-                    c.from_min_y_scale = -1
-                    c.from_max_y_scale = 1
-                    c.from_min_z_scale = -1
-                    c.from_max_z_scale = 1
-                    c.to_min_x_scale = -0.01
-                    c.to_max_x_scale = 0.01
-                    c.to_min_y_scale = -0.01
-                    c.to_max_y_scale = 0.01
-                    c.to_min_z_scale = -0.01
-                    c.to_max_z_scale = 0.01
-                else:
-                    c = final_rig.constraints.new (type='COPY_SCALE')
-                    c.target = ori_ao
-                    c.subtarget = subtarget
+                c = root_pbone.constraints.new (type='TRANSFORM')
+                c.target = ori_ao
+                c.subtarget = subtarget
+                c.use_motion_extrapolate = True
+                c.map_from = 'SCALE'
+                c.map_to = 'SCALE'
+                c.map_to_x_from = 'X'
+                c.map_to_y_from = 'Y'
+                c.map_to_z_from = 'Z'
+                c.from_min_x_scale = -1
+                c.from_max_x_scale = 1
+                c.from_min_y_scale = -1
+                c.from_max_y_scale = 1
+                c.from_min_z_scale = -1
+                c.from_max_z_scale = 1
+                c.to_min_x_scale = -0.01
+                c.to_max_x_scale = 0.01
+                c.to_min_y_scale = -0.01
+                c.to_max_y_scale = 0.01
+                c.to_min_z_scale = -0.01
+                c.to_max_z_scale = 0.01
             
             # rename vert groups to match extra bone names
             if rename_vert_groups_to_extra_bones:   
@@ -1397,26 +1367,20 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                             lods = lod_info_tuple[0]
                             obj_name_wo_lod = lod_info_tuple[1]
                             if len(lods) > 0:
-                                if target_unreal:
-                                    empty = bpy.data.objects.new (name='LOD_' + obj_name_wo_lod, object_data=None)
-                                    empty['fbx_type'] = 'LodGroup'
-                                    scene.collection.objects.link (empty)
-                                
-                                    for lod in lods + [obj]:
-                                        lod.parent = empty
-                                        lod.matrix_parent_inverse = empty.matrix_world.inverted()
-                                        final_selected_objects.append (lod)
-                                        final_selected_objects.append (empty)
-
-                                elif target_unity:
-                                    for lod in lods + [obj]:
-                                        final_selected_objects.append (lod)
-                                    obj.name = obj_name_wo_lod + "_LOD0"
+                                empty = bpy.data.objects.new (name='LOD_' + obj_name_wo_lod, object_data=None)
+                                empty['fbx_type'] = 'LodGroup'
+                                scene.collection.objects.link (empty)
+                            
+                                for lod in lods + [obj]:
+                                    lod.parent = empty
+                                    lod.matrix_parent_inverse = empty.matrix_world.inverted()
+                                    final_selected_objects.append (lod)
+                                    final_selected_objects.append (empty)
 
                             else:
                                 final_selected_objects.append (obj)
 
-                if export_sockets and target_unreal:
+                if export_sockets:
                     for socket in sockets:
                         socket.scale = (1, 1, 1)
 
@@ -1516,9 +1480,6 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
 
         elif asset_type == 'SKELETAL_MESHES':
             self.rename_materials(meshes_to_export, material_prefix, material_suffix)
-            
-            if target_y_up_z_forward:
-                self.rotate_rig(final_rig, meshes_to_export)
 
             if pack_objects:
                 
@@ -1579,8 +1540,6 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 os.makedirs (folder_path, exist_ok=True) 
                 
                 baked_action = self.bake_action_from_scene(final_rig, scene_gyaz_export.global_anim_name)
-                if target_y_up_z_forward:
-                    self.rotate_rig(final_rig, meshes_to_export)
                 self.unconstraint_rig(final_rig)
                 self.move_root_motion_from_bone_to_object(final_rig, root_bone_name, [baked_action])
 
@@ -1595,8 +1554,6 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 fbx_settings.bake_anim = True 
 
                 baked_actions = self.bake_actions_from_ori_to_final_rig(ori_ao, final_rig, actions_to_export)
-                if target_y_up_z_forward:
-                    self.rotate_rig(final_rig, meshes_to_export)
                 self.unconstraint_rig(final_rig) 
                 self.move_root_motion_from_bone_to_object(final_rig, root_bone_name, baked_actions)
                 set_active_action (ori_ao, None)
@@ -1648,8 +1605,8 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
                 prefix_ = animation_prefix
                 suffix_ = animation_suffix
             else:
-                prefix_ = skeletal_mesh_prefix if scene_gyaz_export.target_app == "UNREAL" else static_mesh_prefix
-                suffix_ = skeletal_mesh_suffix if scene_gyaz_export.target_app == "UNREAL" else static_mesh_suffix
+                prefix_ = skeletal_mesh_prefix
+                suffix_ = skeletal_mesh_suffix
                             
             if pack_objects:
                 
@@ -1829,7 +1786,7 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
 
 
     @staticmethod
-    def constraint_bone(rig, bone_name, target_rig, target_bone_name, target_cm_scale_unit):
+    def constraint_bone(rig, bone_name, target_rig, target_bone_name):
         pbones = rig.pose.bones
         pbone = pbones[bone_name]
 
@@ -1841,32 +1798,27 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
         c.target = target_rig
         c.subtarget = target_bone_name
         
-        if target_cm_scale_unit:
-            c = pbone.constraints.new (type='TRANSFORM')
-            c.target = target_rig
-            c.subtarget = target_bone_name
-            c.use_motion_extrapolate = True
-            c.map_from = 'SCALE'
-            c.map_to = 'SCALE'
-            c.map_to_x_from = 'X'
-            c.map_to_y_from = 'Y'
-            c.map_to_z_from = 'Z'
-            c.from_min_x_scale = -1
-            c.from_max_x_scale = 1
-            c.from_min_y_scale = -1
-            c.from_max_y_scale = 1
-            c.from_min_z_scale = -1
-            c.from_max_z_scale = 1
-            c.to_min_x_scale = -0.01
-            c.to_max_x_scale = 0.01
-            c.to_min_y_scale = -0.01
-            c.to_max_y_scale = 0.01
-            c.to_min_z_scale = -0.01
-            c.to_max_z_scale = 0.01
-        else:
-            c = pbone.constraints.new (type='COPY_SCALE')
-            c.target = target_rig
-            c.subtarget = target_bone_name
+        c = pbone.constraints.new (type='TRANSFORM')
+        c.target = target_rig
+        c.subtarget = target_bone_name
+        c.use_motion_extrapolate = True
+        c.map_from = 'SCALE'
+        c.map_to = 'SCALE'
+        c.map_to_x_from = 'X'
+        c.map_to_y_from = 'Y'
+        c.map_to_z_from = 'Z'
+        c.from_min_x_scale = -1
+        c.from_max_x_scale = 1
+        c.from_min_y_scale = -1
+        c.from_max_y_scale = 1
+        c.from_min_z_scale = -1
+        c.from_max_z_scale = 1
+        c.to_min_x_scale = -0.01
+        c.to_max_x_scale = 0.01
+        c.to_min_y_scale = -0.01
+        c.to_max_y_scale = 0.01
+        c.to_min_z_scale = -0.01
+        c.to_max_z_scale = 0.01
 
 
     def bake_actions_from_ori_to_final_rig(self, ori_rig, final_rig, actions):
@@ -1944,20 +1896,6 @@ class Op_GYAZ_Export_Export (bpy.types.Operator):
             clear_blender_collection(pbone.constraints)
         clear_blender_collection(rig.constraints)
 
-
-    def rotate_rig(self, rig, meshes):
-        bpy.ops.object.mode_set(mode='OBJECT')
-
-        rot_mat = Matrix.Rotation(radians(-90.0), 4, "X")
-        rig.matrix_world = rot_mat @ rig.matrix_world
-
-        make_active_only(rig)
-        bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
-        
-        bpy.ops.object.select_all(action='DESELECT')
-        for mesh in meshes:
-            mesh.select_set(True)
-        bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
 
     def move_root_motion_from_bone_to_object(self, rig, root_bone_name, actions):
         

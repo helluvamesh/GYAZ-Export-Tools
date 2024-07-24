@@ -19,7 +19,7 @@
 bl_info = {   
  "name": "GYAZ Export Tools",   
  "author": "helluvamesh",
- "version": (4, 2, 0),
+ "version": (4, 2, 1),
  "blender": (4, 2, 0),   
  "location": "View3d > Toolshelf > Export FBX",   
  "description": "Extension of Blender's FBX Exporter for exporting static meshes, skeletal meshes and animations",
@@ -140,15 +140,6 @@ class GYAZ_Export_Preferences (AddonPreferences):
             ('-Y', '-Y', ''),
             ('-Z', '-Z', '')),
         default='X')
-    
-    target_app: EnumProperty (
-        name="Target App",
-        items=(
-            ("UNREAL", "Unreal", ""),
-            ("UNITY", "Unity", "")
-        ),
-        default="UNREAL"
-    )
     
     def draw (self, context):
         lay = self.layout 

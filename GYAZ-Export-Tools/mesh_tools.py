@@ -20,7 +20,7 @@
 ##########################################################################################################
 ##########################################################################################################
 
-import bpy, bmesh, math
+import bpy, bmesh
 from bpy.props import *
 from bpy.types import Operator, PropertyGroup, Mesh, Scene
 from mathutils import Vector

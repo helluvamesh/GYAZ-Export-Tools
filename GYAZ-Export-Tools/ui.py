@@ -21,7 +21,7 @@
 ##########################################################################################################
 
 import bpy
-from bpy.types import Panel, Operator, UIList
+from bpy.types import Panel, UIList
 
 
 class UI_UL_GYAZ_ExtraBones (UIList):
@@ -340,9 +340,7 @@ class SCENE_PT_GYAZ_Export (Panel):
             col.alignment = "RIGHT"
             col.label (text="{0} fps".format(scene.render.fps))    
             col.alignment = "LEFT"
-        
-        col.label (text="Target App:")
-        col.prop (owner, "target_app", text="")
+
         row = lay.row (align=True)
         row.scale_y = 2
         row.operator ('object.gyaz_export_export', text='EXPORT', icon='EXPORT')
@@ -547,7 +545,7 @@ class SCENE_PT_GYAZ_Export_Extras (Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "FBX"
-    bl_label = 'Export Extras'
+    bl_label = 'Import'
     
     # add ui elements here
     def draw (self, context):      
