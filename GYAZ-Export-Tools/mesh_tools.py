@@ -337,6 +337,7 @@ class Op_GYAZ_Export_GenerateLODs (Operator):
     bl_options = {'REGISTER', 'UNDO'}
             
     lod_count: IntProperty(name="LOD Count", default=3, min=1)
+    decimation_ratio: FloatProperty(name="Decimation Ration", default=2.0, min=1.0)
     mode: EnumProperty(
         name="Mode",
         items=(
@@ -363,6 +364,7 @@ class Op_GYAZ_Export_GenerateLODs (Operator):
     def draw (self, context):
         lay = self.layout
         lay.prop(self, 'lod_count')
+        lay.prop(self, 'decimation_ratio')
         lay.prop(self, 'mode')
         lay.prop(self, 'transfer_normals')
         lay.prop(self, 'lod_spacing')
@@ -459,7 +461,7 @@ class Op_GYAZ_Export_GenerateLODs (Operator):
             m = lod_obj.modifiers.new(name=data_prefix+"Decimate", type="DECIMATE")
             ratio = 1.0
             for x in range(0, lod_idx):
-                ratio /= 2
+                ratio /= self.decimation_ratio
             m.ratio = ratio
             m.use_collapse_triangulate = True
             if self.mode == "DECIMATE_PRESERVE_SEAMS":
@@ -473,9 +475,6 @@ class Op_GYAZ_Export_GenerateLODs (Operator):
                 m.invert_vertex_group = False
             
             if self.transfer_normals:
-                if not lod_obj.data.use_auto_smooth:
-                    lod_obj.data.auto_smooth_angle = math.pi
-                lod_obj.data.use_auto_smooth = True
                 m = lod_obj.modifiers.new(name=data_prefix+"TransferNormals", type="DATA_TRANSFER")
                 m.use_object_transform = False
                 m.object = obj
@@ -487,10 +486,8 @@ class Op_GYAZ_Export_GenerateLODs (Operator):
             if self.focus_view:
                 for area in bpy.context.screen.areas:
                     if area.type == 'VIEW_3D':
-                        ctx = bpy.context.copy()
-                        ctx['area'] = area
-                        ctx['region'] = area.regions[-1]
-                        bpy.ops.view3d.view_selected(ctx)  
+                        with bpy.context.temp_override(area=area, region=area.regions[-1]):
+                            bpy.ops.view3d.view_selected()  
 
         return {'FINISHED'}
     
