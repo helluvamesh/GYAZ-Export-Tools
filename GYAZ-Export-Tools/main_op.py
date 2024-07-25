@@ -29,7 +29,7 @@ from .utils import report, popup, list_to_visual_list, make_active_only, sn, get
     is_str_blank, detect_mirrored_uvs, clear_transformation, clear_transformation_matrix, \
     gather_images_from_material, clear_blender_collection, set_active_action, POD, remove_dot_plus_three_numbers, \
     make_lod_object_name_pattern, get_name_and_lod_index, set_bone_parent, make_active, \
-    bake_collision_object
+    bake_collision_object, remove_extension
 
 
 prefs = bpy.context.preferences.addons[__package__].preferences
@@ -526,7 +526,7 @@ class Op_GYAZ_Export_Export (Operator):
                 for material in materials:
                     if material is not None:
                         gather_images_from_material(material, images, image_nodes)
-
+                
                 if scene_gyaz_export.export_textures:
                     image_info[obj] = images
         
@@ -1720,33 +1720,23 @@ class Op_GYAZ_Export_Export (Operator):
             
         if image.source == 'FILE':
             
-            image.name = remove_dot_plus_three_numbers (image.name)
-            
             if scene_gyaz_export.texture_format_mode == 'ALWAYS_OVERRIDE':
                 final_image_format = scene_gyaz_export.texture_format_override
             else:
                 """KEEP_IF_ANY"""  
                 final_image_format = image.file_format
+
+            new_image = image.copy()
+            new_image.pack()
             
-            new_image = image.copy ()
-            new_image.pack ()
-            
-            image_extension = image_constants.format_map[image.file_format]    
-            image_name_ending = str.lower (image.name[-4:])
-            
-            if image_name_ending == '.'+image_extension:
-                extension = ''
-            else:
-                extension = '.'+image_extension
-            new_image.name = image.name + extension
-            new_image.name = new_image.name [:-4]
-            
+            final_image_name = remove_dot_plus_three_numbers(image.name)
+            final_image_name = remove_extension(final_image_name)
             final_extension = image_constants.format_map[final_image_format]
             
             prefix = texture_prefix if not new_image.name.startswith (texture_prefix) else ''  
             suffix = texture_suffix if not new_image.name.endswith (texture_suffix) else ''  
                 
-            new_image.filepath = os.path.join(texture_folder, prefix + sn(new_image.name) + suffix + '.' + final_extension)
+            new_image.filepath = os.path.join(texture_folder, prefix + sn(final_image_name) + suffix + '.' + final_extension)
             new_image.filepath = os.path.abspath ( bpy.path.abspath (new_image.filepath) )
 
             # color depth

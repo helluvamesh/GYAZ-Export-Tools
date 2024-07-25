@@ -145,6 +145,12 @@ def remove_dot_plus_three_numbers (name):
         return name[:-4]
     else:
         return name
+    
+
+def remove_extension(path):
+    dot_idx = path.rfind('.')
+    if dot_idx >= 1:
+        return path[0:dot_idx]
 
 
 def make_lod_object_name_pattern():
