@@ -285,13 +285,19 @@ class SCENE_PT_GYAZ_Export (Panel):
             if owner.export_textures:
                 col.prop (owner, "export_only_textures")
             col.prop (owner, "skeletal_mesh_pack_objects")
+            if owner.skeletal_mesh_pack_objects:
+                col.prop (owner, "use_skeleton_name_override", text="Override Pack Name")
+                if owner.use_skeleton_name_override:
+                    row = col.row (align=True)
+                    row.label (icon='BLANK1')
+                    row.prop (owner, "skeleton_name_override", text="")
             
         elif asset_type == 'ANIMATIONS':
-            col.prop (owner, 'use_anim_object_name_override')
-            if owner.use_anim_object_name_override:
+            col.prop (owner, 'use_skeleton_name_override', text="Override Skeleton Name")
+            if owner.use_skeleton_name_override:
                 row = col.row (align=True)
                 row.label (text='', icon='BLANK1')
-                row.prop (owner, 'anim_object_name_override')
+                row.prop (owner, 'skeleton_name_override', text="")
             col.prop (owner, "skeletal_clear_transforms")
             col.prop (owner, "skeletal_shapes")
             col.prop (owner, "export_lods")
@@ -322,7 +328,6 @@ class SCENE_PT_GYAZ_Export (Panel):
             row.enabled = True if not owner.rigid_anim_pack_objects else False
             row.prop (owner, "rigid_anim_cubes")
             col.prop (owner, "rigid_anim_pack_objects")
-            col.prop (owner, "export_lods")
             if owner.rigid_anim_pack_objects:
                 row = col.row (align=True)
                 row.label (icon='BLANK1')
@@ -330,6 +335,7 @@ class SCENE_PT_GYAZ_Export (Panel):
                 message1 = True
             else:
                 message1 = False
+            col.prop (owner, "export_lods")
             col.label (text='Animation Name:')
             row = col.row (align=True)
             row.label (icon='BLANK1')

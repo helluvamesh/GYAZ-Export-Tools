@@ -140,9 +140,9 @@ class PG_GYAZ_ExportProps (PropertyGroup):
     
     export_folder: StringProperty (default='', subtype='DIR_PATH', name='Export folder')
     
-    use_anim_object_name_override: BoolProperty (name='Override Object Name', default=False, description="Override the object's name in exported skeletal animations: AnimationPrefix_ObjectName_ActionName")
+    use_skeleton_name_override: BoolProperty (default=False, description="Override the skeleton's name in the export file's name, otherwise use the armature object's name")
     
-    anim_object_name_override: StringProperty (name='', default='')
+    skeleton_name_override: StringProperty (default='', description="Skeleton name override")
     
     global_anim_name: StringProperty (name='', default='')
 

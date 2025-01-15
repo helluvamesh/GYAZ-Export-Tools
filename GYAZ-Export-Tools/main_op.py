@@ -84,12 +84,15 @@ class Op_GYAZ_Export_Export (Operator):
         if asset_type == 'STATIC_MESHES':
             pack_objects = scene_gyaz_export.static_mesh_pack_objects
             pack_name = scene_gyaz_export.static_mesh_pack_name
-        elif asset_type == 'SKELETAL_MESHES' or asset_type == 'ANIMATIONS':
+        elif asset_type == 'SKELETAL_MESHES':
             pack_objects = scene_gyaz_export.skeletal_mesh_pack_objects
-            pack_name = ori_ao_ori_name
+            pack_name = scene_gyaz_export.skeleton_name_override if scene_gyaz_export.use_skeleton_name_override else ori_ao_ori_name
         elif asset_type == 'RIGID_ANIMATIONS':
             pack_objects = scene_gyaz_export.rigid_anim_pack_objects
             pack_name = scene_gyaz_export.rigid_anim_pack_name
+        else:
+            pack_objects = False
+            pack_name = ""
             
         if asset_type == 'STATIC_MESHES':
             export_vert_colors = scene_gyaz_export.static_mesh_vcolors
@@ -298,7 +301,7 @@ class Op_GYAZ_Export_Export (Operator):
         if asset_type == 'ANIMATIONS':
             actions_set_for_export = scene_gyaz_export.actions
             if ori_ao.type == 'ARMATURE':   
-                if scene_gyaz_export.use_anim_object_name_override and is_str_blank(scene_gyaz_export.anim_object_name_override):
+                if scene_gyaz_export.use_skeleton_name_override and is_str_blank(scene_gyaz_export.skeleton_name_override):
                     report (self, 'Object name override is invalid.', 'WARNING')
                     return {"CANCELLED"}
                 else:
@@ -365,6 +368,9 @@ class Op_GYAZ_Export_Export (Operator):
                         if ori_ao.data.bones.get (root_bone_name) is None:
                             report (self, 'Root bone, called "' + root_bone_name + '", not found. Set object as root.', 'WARNING')
                             return {"CANCELLED"}
+                    if scene_gyaz_export.skeletal_mesh_pack_objects and scene_gyaz_export.use_skeleton_name_override and is_str_blank(scene_gyaz_export.skeleton_name_override):
+                        report (self, 'Pack name is invalid.', 'WARNING')
+                        return {"CANCELLED"}
                 else:
                     report (self, "Armature has no mesh children.", 'WARNING')
                     return {"CANCELLED"}
@@ -1518,8 +1524,8 @@ class Op_GYAZ_Export_Export (Operator):
                                 
         elif asset_type == 'ANIMATIONS':
 
-            use_override_character_name = scene_gyaz_export.use_anim_object_name_override
-            override_character_name = scene_gyaz_export.anim_object_name_override
+            use_override_character_name = scene_gyaz_export.use_skeleton_name_override
+            override_character_name = scene_gyaz_export.skeleton_name_override
 
             character_name = ""
             if use_override_character_name:
